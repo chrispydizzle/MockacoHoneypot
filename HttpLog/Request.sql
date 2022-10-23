@@ -1,0 +1,11 @@
+﻿CREATE TABLE [dbo].[Request]
+(
+	[RequestId] BIGINT NOT NULL PRIMARY KEY IDENTITY(1,1),
+    [SourceHost] NVARCHAR(500) NOT NULL,
+	[Target] TEXT NOT NULL,
+	[Method] NVARCHAR(50) NOT NULL,
+	[Body] BINARY NULL, 
+	[QueryString] NVARCHAR(4000) NULL,
+    [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE(), 
+    [TargetHost] NVARCHAR(500) NULL
+)

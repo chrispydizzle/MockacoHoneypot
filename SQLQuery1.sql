@@ -1,0 +1,1 @@
+﻿SELECT TOP 500 * from Request order by requestid desc

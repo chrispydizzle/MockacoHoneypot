@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using NaughtyStrings.Bogus;
 
 namespace Mockaco
 {
@@ -54,13 +55,16 @@ namespace Mockaco
                 .Default
                 .AddReferences(
                     typeof(Faker).Assembly,
-                    typeof(ScriptRunnerFactory).Assembly)
+                    typeof(ScriptRunnerFactory).Assembly,
+                    typeof(NaughtyStrings.TheNaughtyStrings).Assembly,
+                    typeof(NaughtyStrings.Bogus.Naughty).Assembly)
                 .AddReferences(_options.CurrentValue.References)
                 .AddImports(
                     "System",
                     "System.Linq",
                     "System.Collections.Generic",
                     "System.Text.RegularExpressions",
+                    "NaughtyStrings.Bogus",
                     typeof(Faker).Namespace,
                     typeof(ScriptRunnerFactory).Namespace,
                     "Newtonsoft.Json",
@@ -72,7 +76,6 @@ namespace Mockaco
                 code,
                 globalsType: typeof(TContext),
                 options: scriptOptions);
-            
             var runner = script.CreateDelegate();
             
             _logger.LogTrace("Created runner in {elapsedTime} milliseconds", stopWatch.ElapsedMilliseconds);
