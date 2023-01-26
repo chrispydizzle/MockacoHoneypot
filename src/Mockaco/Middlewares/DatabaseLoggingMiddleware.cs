@@ -5,7 +5,7 @@ using System;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 
-namespace Mockaco
+namespace Mockaco.Middlewares
 {
     public class DatabaseLoggingMiddleware
     {
@@ -25,20 +25,26 @@ namespace Mockaco
         {
             try
             {
-                using (var connection = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=E:\Hacking\httpdb.mdf;Integrated Security=True;Connect Timeout=30")) 
+                using (var connection = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=E:\Hacking\httpdb.mdf;Integrated Security=True;Connect Timeout=30"))
                 {
                     connection.Open();
-                    var sql = "INSERT INTO Request (SourceHost, TargetHost, Target, Method, QueryString) VALUES (@SourceHost, @TargetHost, @Target, @Method, @QueryString)";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.Add(new SqlParameter("SourceHost", httpContext.Connection.RemoteIpAddress.ToString()));
-                        command.Parameters.Add(new SqlParameter("TargetHost", httpContext.Request.Host.ToString()));
-                        command.Parameters.Add(new SqlParameter("Target", httpContext.Request.Path.ToString()));
-                        command.Parameters.Add(new SqlParameter("Method", httpContext.Request.Method));
-                        command.Parameters.Add(new SqlParameter("QueryString", httpContext.Request.QueryString.ToString()));
-                        await command.ExecuteNonQueryAsync();
-                    }
-                    
+                    var sql = @"DECLARE @SourceHostId BIGINT
+                                SET @SourceHostId = (SELECT HostId FROM Host WHERE IpAddress = @SourceHost)
+                                IF @SourceHostId IS NULL 
+                                    BEGIN
+                                        INSERT INTO Host (IpAddress) VALUES (@SourceHost)
+                                        SET @SourceHostId = SCOPE_IDENTITY()
+                                    END
+                                INSERT INTO Request (SourceHostId, TargetHost, Target, Method, QueryString)
+                                VALUES (@SourceHostId , @TargetHost, @Target, @Method, @QueryString)";
+                    using var command = new SqlCommand(sql, connection);
+                    command.Parameters.Add(new SqlParameter("SourceHost", httpContext.Connection.RemoteIpAddress.ToString()));
+                    command.Parameters.Add(new SqlParameter("TargetHost", httpContext.Request.Host.ToString()));
+                    command.Parameters.Add(new SqlParameter("Target", httpContext.Request.Path.ToString()));
+                    command.Parameters.Add(new SqlParameter("Method", httpContext.Request.Method));
+                    command.Parameters.Add(new SqlParameter("QueryString", httpContext.Request.QueryString.ToString()));
+                    await command.ExecuteNonQueryAsync();
+
                 }
                 await _next(httpContext);
             }

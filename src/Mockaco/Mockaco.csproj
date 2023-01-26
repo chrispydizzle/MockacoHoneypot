@@ -73,4 +73,8 @@
     <Folder Include="Middlewares\Database\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\SaltwaterTaffyNetCore\SaltwaterTaffy\SaltwaterTaffy.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,7 @@
+﻿CREATE TABLE [dbo].[Host]
+(
+	[HostId] BIGINT NOT NULL  IDENTITY(1,1),
+	[IpAddress] NVARCHAR(30) UNIQUE NOT NULL, 
+    [CreatedAt] DATETIME NOT NULL DEFAULT GETDATE(), 
+    PRIMARY KEY ([HostId])
+)

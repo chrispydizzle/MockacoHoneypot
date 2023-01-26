@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Operations Version="1.0" xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+  <Operation Name="Rename Refactor" Key="dbce3ea7-334e-4bb2-8f49-be7ddfccb19c" ChangeDateTime="10/29/2022 19:56:10">
+    <Property Name="ElementName" Value="[dbo].[Discovered].[JobId]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[Discovered]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="DiscoveryId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="665b4f27-8975-4cdf-bdef-46c8ef266490" ChangeDateTime="10/29/2022 19:56:19">
+    <Property Name="ElementName" Value="[dbo].[Discovery].[ExecutablePath]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[Discovery]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="DiscoveryType" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="661e288d-aefa-424c-a53b-66e1f71481c0" ChangeDateTime="10/29/2022 19:56:49">
+    <Property Name="ElementName" Value="[dbo].[Discovery].[ExecutableArguments]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[Discovery]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="DiscoveryDetail" />
+  </Operation>
+</Operations>

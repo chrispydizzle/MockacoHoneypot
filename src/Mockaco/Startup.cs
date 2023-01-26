@@ -6,6 +6,7 @@ using System.Reflection;
 
 namespace Mockaco
 {
+    using Mockaco.Middlewares;
     using Settings;
 
     public partial class Startup
@@ -68,7 +69,7 @@ namespace Mockaco
             logger.LogInformation("{assemblyName} v{assemblyVersion} [github.com/natenho/Mockaco]\n\n{logo}", assemblyName, version, _logo);
 
             app.UseRouting();
-            
+
             var verificationEndpointPrefix = _configuration["Mockaco:VerificationEndpointPrefix"];
             var verificationEndpointName = _configuration["Mockaco:VerificationEndpointName"];
 
@@ -76,12 +77,13 @@ namespace Mockaco
             {
                 appBuilder.UseMiddleware<ErrorHandlingMiddleware>()
                     .UseMiddleware<DatabaseLoggingMiddleware>()
+                    .UseMiddleware<ReconTriggerMiddleware>()
                     .UseMiddleware<ResponseDelayMiddleware>()
                     .UseMiddleware<RequestMatchingMiddleware>()
                     .UseMiddleware<ResponseMockingMiddleware>()
                     .UseMiddleware<CallbackMiddleware>();
             });
-            
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapDynamicControllerRoute<VerificationRouteValueTransformer>("{controller}/{action}");

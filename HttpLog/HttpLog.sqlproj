@@ -62,5 +62,13 @@
   <ItemGroup>
     <Build Include="Request.sql" />
     <Build Include="Header.sql" />
+    <Build Include="Host.sql" />
+    <Build Include="HostJob.sql" />
+    <Build Include="Job.sql" />
+    <Build Include="Discovery.sql" />
+    <Build Include="dbo.Hostname.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="HttpLog.refactorlog" />
   </ItemGroup>
 </Project>
