@@ -62,7 +62,7 @@ namespace Mockaco.Middlewares
                     await this.TryLoadNewJobs(connection);
                     if (jobsToDo.IsEmpty)
                     {
-                        logger.LogInformation("No jobs!");
+                        //logger.LogInformation("No jobs!");
                         Thread.Sleep(10000);
                         return;
                     }
@@ -119,8 +119,8 @@ namespace Mockaco.Middlewares
             }
             finally
             {
+                // logger.Log(LogLevel.Information, $"Jobs running: {jobsRunning.Count} | Jobs in queue: {jobsToDo.Count}");
                 jobsRunning.Remove(jobsRunning.First());
-                logger.Log(LogLevel.Information, $"Jobs running: {jobsRunning.Count} | Jobs in queue: {jobsToDo.Count}");
                 if (jobsRunning.Count < maxJobs)
                 {
                     jobsRunning.Add(Task.Run(() => DoReconThing(logger)));

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Mockaco.Middlewares
 {
-    public class DatabaseLoggingMiddleware
+    public class DatabaseLoggingMiddleware : BaseReconGrabbingMiddleware
     {
         private readonly RequestDelegate _next;
 

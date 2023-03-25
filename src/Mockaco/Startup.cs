@@ -66,7 +66,7 @@ namespace Mockaco
             var assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
             var version = GitVersionInformation.InformationalVersion;
 
-            logger.LogInformation("{assemblyName} v{assemblyVersion} [github.com/natenho/Mockaco]\n\n{logo}", assemblyName, version, _logo);
+            logger.LogInformation("{assemblyName} v{assemblyVersion} [github.com/chrispydizzle/MockacoHoneypot]\n\n{logo}", assemblyName, version, _logo);
 
             app.UseRouting();
 
