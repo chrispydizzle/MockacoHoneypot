@@ -264,3 +264,5 @@ __pycache__/
 # Mock Files
 src/Mockaco/Mocks*/**/*.*
 !src/Mockaco/Mocks/hello.json
+
+appsettings.json
