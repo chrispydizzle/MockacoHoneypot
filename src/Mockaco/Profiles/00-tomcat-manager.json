@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/manager/html", "/manager/text/list"]},
+  "response": {
+    "status": 401,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "WWW-Authenticate": "Basic realm=\"Tomcat Manager Application\"", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>401 Unauthorized</title></head><body><h1>401 Unauthorized</h1><p>You are not authorized to view this page.</p><p>Access to the Tomcat Manager requires an account with the appropriate manager role.</p><hr><p>Apache Tomcat/9.0.96</p></body></html>\n"
+  }
+}

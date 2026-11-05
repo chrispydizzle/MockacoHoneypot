@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/geoserver", "/geoserver/web"]},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>GeoServer: Welcome</title></head><body><header><h1>GeoServer</h1></header><form action=\"/geoserver/j_spring_security_check\" method=\"post\"><label>Username <input name=\"username\"></label><label>Password <input name=\"password\" type=\"password\"></label><button type=\"submit\">Login</button></form><main><h2>Welcome to GeoServer</h2><p>GeoServer provides standards-based access to geospatial data.</p><h3>Service Capabilities</h3><ul><li>WMS</li><li>WFS</li><li>WCS</li></ul></main></body></html>\n"
+  }
+}

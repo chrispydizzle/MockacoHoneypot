@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/cgi-sys/defaultwebpage.cgi"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Default Web Site Page</title></head><body><main><h1>Website configuration pending</h1><p>If you are the website owner, contact your hosting provider.</p><p>This domain is not currently assigned to a website on this server. DNS changes or a recent account move may take time to appear.</p><hr><p>Web hosting services</p></main></body></html>\n"
+  }
+}

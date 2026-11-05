@@ -6,6 +6,7 @@
 	[DiscoveryType] NVARCHAR(16) NOT NULL, 
 	[DiscoveryDetail] TEXT NOT NULL, 
     [PortNumber] INT NULL, 
+    [ObservedAtUtc] DATETIME2 NULL,
     CONSTRAINT [FK_Discovery_ToHostJob] FOREIGN KEY ([HostJobId]) REFERENCES [HostJob]([HostJobId]),
     CONSTRAINT [FK_Discovery_ToHost] FOREIGN KEY ([HostId]) REFERENCES [Host]([HostId])
 )

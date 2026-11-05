@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Recon atlas | Mockaco</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23182b41'/%3E%3Cpath d='M6 23 13 8 25 18 6 23' fill='none' stroke='%2376b7b2'/%3E%3Cg fill='%23f28e2b'%3E%3Ccircle cx='6' cy='23' r='3'/%3E%3Ccircle cx='13' cy='8' r='3'/%3E%3Ccircle cx='25' cy='18' r='3'/%3E%3C/g%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css?v=5">
+    <script type="module" src="intelligence.mjs?v=5"></script>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="masthead">
+        <div class="identity">
+            <svg class="mark" viewBox="0 0 42 42" aria-hidden="true">
+                <path d="M7 31 18 8 35 25 7 31" />
+                <circle cx="7" cy="31" r="3" /><circle cx="18" cy="8" r="3" /><circle cx="35" cy="25" r="3" />
+            </svg>
+            <div><p class="eyebrow">Mockaco / HTTP observatory</p><h1>Recon atlas<span>.</span></h1></div>
+        </div>
+        <div class="header-context">
+            <div class="capture-meta"><span class="connection-label">SQL evidence &middot; on-demand refresh</span><p id="capture-range">Traffic, services and host intelligence</p></div>
+            <nav class="workspace-tabs" role="tablist" aria-label="Workspace">
+                <button id="intelligence-tab" type="button" role="tab" aria-selected="true" aria-controls="intelligence-view">Intelligence</button>
+                <button id="behavior-tab" type="button" role="tab" aria-selected="false" aria-controls="behavior-view" tabindex="-1">Behavior atlas</button>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <section id="intelligence-view" role="tabpanel" aria-labelledby="intelligence-tab">
+            <div class="intelligence-intro">
+                <div><p class="eyebrow">Collection overview</p><h2>The signals behind the sources.</h2><p>Captured requests, discovered services, and the intelligence that connects them.</p></div>
+                <span class="scope-note">All-time capture<br>Stored evidence, not live scans</span>
+            </div>
+            <div id="intel-metrics" class="metric-grid" aria-label="Collection metrics">
+                <div class="metric-card"><span>Source IPs</span><strong>&mdash;</strong><small>Reading the collection</small></div>
+                <div class="metric-card"><span>Captured requests</span><strong>&mdash;</strong><small>All recorded traffic</small></div>
+                <div class="metric-card"><span>Shodan profiles</span><strong>&mdash;</strong><small>Existing host intelligence</small></div>
+                <div class="metric-card"><span>Hosts with reported CVEs</span><strong>&mdash;</strong><small>Reports, not confirmed findings</small></div>
+            </div>
+            <div class="intelligence-insights">
+                <section class="panel insight-panel" aria-labelledby="countries-title"><div class="panel-heading"><div><p class="eyebrow">Reported geography</p><h3 id="countries-title">Where profiles place them</h3></div><span class="subtle-count">Top 6</span></div><div id="intel-countries" class="rank-list"><p class="muted">Loading country observations...</p></div></section>
+                <section class="panel insight-panel" aria-labelledby="organizations-title"><div class="panel-heading"><div><p class="eyebrow">Network ownership</p><h3 id="organizations-title">Organizations in the data</h3></div><span class="subtle-count">Top 6</span></div><div id="intel-organizations" class="rank-list"><p class="muted">Loading network observations...</p></div></section>
+                <section class="panel insight-panel" aria-labelledby="coverage-title"><div class="panel-heading"><div><p class="eyebrow">Collection health</p><h3 id="coverage-title">What we know so far</h3></div></div><div id="intel-coverage" class="coverage-content"><p class="muted">Reading provider coverage...</p></div></section>
+            </div>
+            <section class="panel inventory-panel" aria-labelledby="inventory-title">
+                <div class="panel-heading"><div><p class="eyebrow">Explore the evidence</p><h2 id="inventory-title">Source intelligence</h2></div><div class="inventory-actions"><button id="intel-cleanup" type="button">Clean up hosts</button><button id="intel-refresh" type="button" title="Reread SQL now; no scan or build is required">Refresh collection</button></div></div>
+                <form id="intel-filters" class="inventory-filters">
+                    <label class="intel-search-label">Search the collection<input id="intel-search" type="search" placeholder="IP, organization, ASN, country, hostname or CVE" autocomplete="off"></label>
+                    <label>Evidence<select id="intel-state"><option value="all">All hosts</option><option value="available">Shodan available</option><option value="cves">Reported CVEs</option><option value="services">Observed ports</option><option value="no-data">Shodan: no data</option><option value="unqueried">No stored lookup</option><option value="pending">Pending / running</option><option value="failed">Failed lookups</option></select></label>
+                    <label>Sort by<select id="intel-sort"><option value="last-seen">Latest request</option><option value="requests">Most requests</option><option value="ports">Most ports</option><option value="cves">Most reported CVEs</option></select></label>
+                    <button id="intel-clear" type="button">Clear filters</button>
+                </form>
+                <div id="intel-error" class="inventory-error" role="alert" hidden></div>
+                <p id="intel-maintenance-status" class="maintenance-status" role="status" hidden></p>
+                <div class="inventory-scope"><p id="intel-result" role="status" aria-live="polite">Loading source inventory...</p><span>Open any source for its full dossier</span></div>
+                <div class="table-scroll inventory-scroll" tabindex="0" role="region" aria-label="Source intelligence table, scroll for all columns">
+                    <table class="inventory-table"><caption class="sr-only">All stored source hosts and their latest Shodan evidence</caption><thead><tr><th scope="col">Source IP</th><th scope="col">Network / location</th><th scope="col">Requests</th><th scope="col">Ports</th><th scope="col">CVEs reported</th><th scope="col">Shodan lookup</th><th scope="col">Last request</th></tr></thead><tbody id="intel-rows"></tbody></table>
+                </div>
+                <div class="pagination"><button id="intel-previous" type="button">Previous</button><span id="intel-page">Page 1</span><button id="intel-next" type="button">Next</button></div>
+            </section>
+            <p class="intelligence-boundary">Shodan locations, organizations and CVEs are provider-reported observations. A shared IP or reported CVE is not proof of attribution or exploitability. Open a dossier to inspect the original evidence.</p>
+        </section>
+        <section id="behavior-view" role="tabpanel" aria-labelledby="behavior-tab" hidden>
+        <nav class="section-nav behavior-nav" aria-label="Behavior atlas sections"><a href="#constellation-panel">Constellation</a><a href="#matrix-panel">Matrix</a><a href="#source-list">Sources</a></nav>
+        <form id="filters" class="toolbar" aria-label="Capture filters">
+            <div class="filter-group date-fields" role="group" aria-label="Request dates">
+                <label>From <input id="from" name="from" type="date" min="1753-01-01"></label>
+                <label>Before <input id="before" name="before" type="date" min="1753-01-01"></label>
+                <button type="submit" class="primary" id="apply">Apply dates</button>
+                <button type="button" id="all-time">All time</button>
+            </div>
+            <div class="filter-group source-fields" role="group" aria-label="Source filters">
+                <label class="search-field">Find source <input id="search" type="search" placeholder="IP address or host ID" autocomplete="off"></label>
+                <label class="minimum-field">Min. requests <input id="minimum" type="number" min="1" step="1" value="1"></label>
+                <button type="button" id="refresh" title="Read a new snapshot from SQL Server">Refresh data</button>
+            </div>
+        </form>
+        <div id="error" class="error-banner" role="alert" hidden></div>
+        <div class="scope-bar">
+            <p id="scope-summary" aria-live="polite">Preparing behavioral fingerprints...</p>
+            <div class="scope-actions"><span id="selection-label">All behaviors / all services</span><button id="clear-selection" type="button" hidden>Clear selection</button></div>
+        </div>
+
+        <div class="workspace">
+            <div class="visuals">
+                <section class="panel constellation-panel" id="constellation-panel" aria-labelledby="constellation-title">
+                    <div class="panel-heading">
+                        <div><p class="eyebrow">Behavioral similarity</p><h2 id="constellation-title">The constellation</h2></div>
+                        <div class="segmented" role="group" aria-label="Constellation view">
+                            <button id="view-groups" type="button" aria-pressed="true">Fingerprints</button>
+                            <button id="view-sources" type="button" aria-pressed="false">Sources</button>
+                        </div>
+                    </div>
+                    <p class="panel-description" id="view-description">One node per shared route/method set. Node size is log-scaled source count. Select a fingerprint to explore.</p>
+                    <div class="chart-frame" id="chart-frame">
+                        <canvas id="constellation" tabindex="0" role="img" aria-label="Behavioral similarity constellation. Drag to pan, use the Pan view buttons, scroll to zoom, or use arrow keys and plus/minus. The source table provides keyboard access to every source."></canvas>
+                        <div id="chart-message" class="chart-message"><span class="loading-indicator"></span><p>Reading paths. Building the atlas.</p></div>
+                        <div id="chart-tooltip" class="chart-tooltip" hidden></div>
+                        <div class="chart-controls" aria-label="Map controls">
+                            <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+                            <button id="zoom-out" type="button" aria-label="Zoom out">&minus;</button>
+                            <button id="reset-view" type="button">Fit</button>
+                        </div>
+                        <details id="pan-menu" class="pan-menu">
+                            <summary>Pan view</summary>
+                            <div class="pan-directions" role="group" aria-label="Pan direction">
+                                <button id="pan-up" type="button" aria-label="Pan view up">&uarr;</button>
+                                <button id="pan-left" type="button" aria-label="Pan view left">&larr;</button>
+                                <button id="pan-right" type="button" aria-label="Pan view right">&rarr;</button>
+                                <button id="pan-down" type="button" aria-label="Pan view down">&darr;</button>
+                            </div>
+                        </details>
+                    </div>
+                    <div class="chart-footer">
+                        <span id="projection-quality">Calculating projection...</span>
+                        <span class="axis-label">PCA projection / not geography</span>
+                        <label class="check-label"><input id="spread" type="checkbox" checked> Separate overlaps</label>
+                    </div>
+                    <div id="legend" class="legend" aria-label="Filter by requested endpoint family"></div>
+                </section>
+
+                <section class="panel matrix-panel" id="matrix-panel" aria-labelledby="matrix-title">
+                    <div class="panel-heading">
+                        <div><p class="eyebrow">Two-sided behavior</p><h2 id="matrix-title">What they request. What they expose.</h2></div>
+                        <label class="compact-label">Cell value <select id="matrix-mode"><option value="count">Source count</option><option value="percent">% of row sources</option></select></label>
+                    </div>
+                    <p class="panel-description">Requested endpoint families &times; services observed on those source hosts. Select a cell to find the overlap.</p>
+                    <div class="matrix-tools">
+                        <label>Find any service <input id="service-search" type="search" placeholder="ssh, http, tcpwrapped..." autocomplete="off"></label>
+                        <div class="service-pagination">
+                            <span id="matrix-summary" aria-live="polite"></span>
+                            <div class="service-page-controls">
+                                <button id="previous-services" type="button" aria-label="Previous services" aria-controls="matrix">&larr;</button>
+                                <select id="service-page" aria-label="Service page" aria-controls="matrix"><option value="0">Page 1 of 1</option></select>
+                                <button id="next-services" type="button" aria-label="Next services" aria-controls="matrix">&rarr;</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="matrix-scroll" class="matrix-scroll" tabindex="0" role="region" aria-label="Behavior and service matrix. Scroll within a page; use service pages or search to explore all services.">
+                        <table id="matrix"><caption class="sr-only">Distinct source counts by requested endpoint family and observed service</caption></table>
+                    </div>
+                    <p class="footnote">Each source counts once per cell, but can appear in multiple rows and columns. Services include all stored Nmap scans and Shodan host records, not just the selected request dates. No observations does not mean no open ports.</p>
+                </section>
+
+                <section class="panel source-panel" id="source-list" aria-labelledby="sources-title">
+                    <div class="panel-heading"><div><p class="eyebrow">Underlying evidence</p><h2 id="sources-title">Matching sources</h2></div><span id="source-count" class="mono"></span></div>
+                    <div class="table-scroll"><table class="source-table">
+                        <thead><tr><th scope="col">Source address</th><th scope="col">Requests</th><th scope="col">Route / method pairs</th><th scope="col">Dominant family</th><th scope="col">Last request</th></tr></thead>
+                        <tbody id="source-rows"></tbody>
+                    </table></div>
+                    <div class="pagination"><button id="previous-page" type="button">Previous</button><span id="page-label"></span><button id="next-page" type="button">Next</button></div>
+                </section>
+            </div>
+
+            <aside class="inspector panel" aria-labelledby="inspector-title">
+                <div class="panel-heading"><div><p class="eyebrow">Source lens</p><h2 id="inspector-title">Follow a fingerprint</h2></div><button id="close-source" type="button" aria-label="Close source details" hidden>&times;</button></div>
+                <div id="inspector-content"><p class="muted">Select a node or a source row to inspect its requests, service observations, and closest behavioral matches.</p></div>
+            </aside>
+        </div>
+
+        <details class="methodology">
+            <summary>How to read this atlas</summary>
+            <div class="methodology-grid">
+                <div><h3>Similarity, not identity</h3><p>Profiles use HTTP method and URL-decoded, case-preserving paths. Numeric and GUID path segments become {id}; query values are excluded. Log-scaled request counts are TF-IDF weighted and normalized. Similar-source scores are cosine similarity on these full profiles. IP proximity, services, timing and request order do not contribute.</p></div>
+                <div><h3>A projection, not a verdict</h3><p>Centered PCA projects full profiles into two dimensions; the retained variance reports how much information survives. A shared fingerprint means the same normalized route/method set, not necessarily the same traffic mix. Separating overlaps adds small, deterministic offsets for readability. Confirm apparent neighbors with the full-profile scores.</p></div>
+                <div><h3>What the matrix counts</h3><p>Rows are transparent URL-based categories, not exploit classifications. Columns use recorded Nmap service names or Shodan modules, not port-based guesses. Blank banners are labeled unidentified by port. Search, request minimum and fingerprint selection define the matrix cohort; a cell selection highlights sources without narrowing its own denominator.</p></div>
+                <div><h3>Capture boundaries</h3><p>Request dates use the database clock; Before is exclusive. Nmap timestamps are job-update times. Shodan observation and retrieval times are shown separately in UTC. Service results can be older than the requests. Browsing and refresh read SQL; the explicit host cleanup action deletes selected hosts and linked records. Neither action triggers scans, replays requests, or contacts captured hosts.</p></div>
+            </div>
+        </details>
+        </section>
+        <footer class="page-footer"><span>Mockaco / recon atlas</span><span id="snapshot-time">Snapshot not yet loaded</span></footer>
+    </main>
+    <dialog id="host-dialog" class="host-dialog" aria-labelledby="host-title" aria-describedby="host-subtitle">
+        <header class="dossier-heading"><div><p class="eyebrow">Source dossier</p><h2 id="host-title">Source intelligence</h2><p id="host-subtitle">Loading stored evidence...</p></div><button id="host-close" type="button" autofocus>Close</button></header>
+        <nav id="host-tabs" class="dossier-tabs" role="tablist" aria-label="Dossier sections"></nav>
+        <div id="host-body" class="dossier-body"></div>
+    </dialog>
+    <dialog id="cleanup-dialog" class="host-dialog cleanup-dialog" aria-labelledby="cleanup-title" aria-describedby="cleanup-description">
+        <header class="dossier-heading"><div><p class="eyebrow">Collection maintenance</p><h2 id="cleanup-title">Clean up non-public hosts</h2></div><button id="cleanup-close" type="button" autofocus>Close</button></header>
+        <div class="dossier-body">
+            <p id="cleanup-description" class="section-description">Review malformed, private/local, shared, documentation, benchmark, multicast and reserved addresses. Purging permanently deletes these hosts and all linked requests, headers, recon jobs, service observations, hostnames and raw evidence.</p>
+            <div id="cleanup-counts"></div>
+            <p id="cleanup-status" class="result-description" role="status"></p>
+            <p id="cleanup-error" class="inline-error" role="alert" hidden></p>
+            <table class="cleanup-table"><caption class="sr-only">Hosts selected for cleanup</caption><thead><tr><th scope="col">Address</th><th scope="col">Reason</th></tr></thead><tbody id="cleanup-rows"></tbody></table>
+            <button id="cleanup-more" type="button" class="outline-action" hidden>Show more hosts</button>
+            <p class="evidence-note">Only the reviewed host IDs are deleted. Counts may grow with new traffic before deletion. This is a one-time cleanup, not a capture filter; new traffic can create these addresses again.</p>
+        </div>
+        <footer class="cleanup-actions"><button id="cleanup-refresh" type="button">Refresh preview</button><button id="cleanup-purge" class="danger-action" type="button" disabled>Purge hosts and linked data</button></footer>
+    </dialog>
+</body>
+</html>

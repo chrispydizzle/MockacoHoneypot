@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/bbs/forum.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Community - Northstar</title></head><body><header><h1>Community</h1><a href=\"/login\">Sign in</a></header><main><table><thead><tr><th>Forum</th><th>Topics</th><th>Posts</th></tr></thead><tbody><tr><td>Announcements</td><td>12</td><td>28</td></tr><tr><td>General discussion</td><td>84</td><td>316</td></tr><tr><td>Support</td><td>37</td><td>105</td></tr></tbody></table><p>Sign in to view topics and post replies.</p></main></body></html>\n"
+  }
+}

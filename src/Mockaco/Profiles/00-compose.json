@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/docker-compose.prod.yml", "/docker-compose.yml", "/docker-compose.yaml"]},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/yaml; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "services:\n  web:\n    image: nginx:1.24-alpine\n    ports:\n      - \"80:80\"\n    volumes:\n      - ./public:/var/www/portal/public:ro\n      - ./.docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro\n    depends_on:\n      - app\n  app:\n    image: registry.internal/platform/portal:1.8.4\n    working_dir: /var/www/portal\n    env_file: .env\n    depends_on:\n      - mysql\n      - redis\n  mysql:\n    image: mysql:8.0\n    environment:\n      MYSQL_DATABASE: portal\n      MYSQL_USER: portal\n      MYSQL_PASSWORD: ${DB_PASSWORD}\n      MYSQL_ROOT_PASSWORD: w4K8nQ2tR7pM5vX9\n    volumes:\n      - mysql-data:/var/lib/mysql\n  redis:\n    image: redis:7-alpine\n    command: redis-server --appendonly yes\nvolumes:\n  mysql-data:\n"
+  }
+}

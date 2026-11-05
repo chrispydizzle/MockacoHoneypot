@@ -1,0 +1,207 @@
+[
+  {
+    "paths": [ "/.env", "/.env.prod", "/.env.production", "/.env.production.local", "/.env.live", "/.env.bak", "/.env.backup", "/.env.save", "/.env.secret", "/.env.config", "/build/.env", "/configuration/.env", "/api/.env", "/settings/.env", "/prod/.env", "/config/.env", "/app/.env", "/laravel/.env", "/.docker/.env" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "APP_ENV=production\n", "DB_CONNECTION=mysql\n", "AWS_ACCESS_KEY_ID=" ]
+  },
+  {
+    "paths": [ "/.env.local", "/.env.dev", "/.env.dev.local", "/.env.development", "/.env.development.local", "/.env.sandbox" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "APP_ENV=local\n", "APP_DEBUG=true\n", "DB_DATABASE=portal_dev\n" ]
+  },
+  {
+    "paths": [ "/.env.ci", "/.env.test", "/.env.testing", "/.env.test.local" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "APP_ENV=testing\n", "DB_DATABASE=portal_test\n" ]
+  },
+  {
+    "paths": [ "/.env.preprod", "/.env.stage", "/.env.staging", "/.env.staging.local", "/.env.uat" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "APP_ENV=staging\n", "DB_DATABASE=portal_staging\n" ]
+  },
+  {
+    "paths": [ "/.env.default", "/.env.dist", "/.env.template", "/.env_sample", "/.env.sample", "/.env.example" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "APP_ENV=local\n", "DB_HOST=mysql\n", "DB_DATABASE=portal\n" ]
+  },
+  {
+    "paths": [ "/.git/config", "/app/.git/config", "/www/.git/config", "/backup/.git/config", "/admin/.git/config", "/assets../.git/config", "/project/.git/config", "/src/.git/config", "/files/.git/config", "/api/.git/config", "/config/.git/config", "/media/.git/config", "/core/.git/config", "/server/.git/config", "/data/.git/config", "/media../.git/config", "/cms/.git/config", "/dev/.git/config", "/static../.git/config", "/public/.git/config" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "[core]\n", "[remote \"origin\"]\n", "portal.git", "merge = refs/heads/main\n" ]
+  },
+  {
+    "paths": [ "/.aws/credentials" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "[default]\n", "aws_access_key_id = AKIA", "aws_secret_access_key = " ]
+  },
+  {
+    "paths": [ "/.aws/config" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "[default]\n", "region = us-east-1\n", "output = json\n" ]
+  },
+  {
+    "paths": [ "/config.json" ],
+    "status": 200,
+    "contentType": "application/json",
+    "contains": [ "\"database\"", "\"mysql\"", "\"portal\"" ]
+  },
+  {
+    "paths": [ "/docker-compose.prod.yml", "/docker-compose.yml", "/docker-compose.yaml" ],
+    "status": 200,
+    "contentType": "application/yaml; charset=utf-8",
+    "contains": [ "services:\n", "image: nginx:1.24-alpine", "MYSQL_DATABASE: portal", "env_file: .env" ]
+  },
+  {
+    "paths": [ "/", "/index.html", "/index.php", "/Q.php", "/girl.php", "/biz.php", "/mobile/index.php", "/z/1/1.htm", "/english.php", "/bizchart.php", "/hall/oPtest/oPtest", "/user/msg.html" ],
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "<!DOCTYPE html>", "<title>Northstar Portal</title>", "href=\"/login\"" ]
+  },
+  {
+    "paths": [ "/captcha" ],
+    "status": 200,
+    "contentType": "image/svg+xml",
+    "contains": [ "<svg", "http://www.w3.org/2000/svg", "<text" ]
+  },
+  {
+    "paths": [ "/favicon.ico" ],
+    "status": 200,
+    "contentType": "image/x-icon",
+    "binary": true
+  },
+  {
+    "paths": [ "/robots.txt" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "User-agent: *\n", "Disallow: /admin/\n", "Disallow: /backup/\n" ]
+  },
+  {
+    "paths": [ "/sitemap.xml" ],
+    "status": 200,
+    "contentType": "application/xml; charset=utf-8",
+    "contains": [ "http://www.sitemaps.org/schemas/sitemap/0.9", "<loc>http://portal.internal/</loc>" ]
+  },
+  {
+    "paths": [ "/cgi-sys/defaultwebpage.cgi" ],
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "<title>Default Web Site Page</title>", "website owner", "hosting provider" ]
+  },
+  {
+    "paths": [ "/login", "/user_Login_index.html", "/index/user/login.html", "/admin/auth/login", "/admin/login/index", "/boaform/admin/formLogin", "/Main_Login.asp" ],
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "<form", "method=\"post\"", "name=\"username\"", "type=\"password\"" ]
+  },
+  {
+    "method": "POST",
+    "paths": [ "/login", "/boaform/admin/formLogin" ],
+    "status": 401,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "Invalid username or password" ]
+  },
+  {
+    "paths": [ "/wp-login.php" ],
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "id=\"loginform\"", "action=\"/wp-login.php\"", "name=\"log\"", "name=\"pwd\"", "id=\"wp-submit\"" ]
+  },
+  {
+    "method": "POST",
+    "paths": [ "/wp-login.php" ],
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "id=\"login_error\"", "Invalid username or password", "id=\"loginform\"" ]
+  },
+  {
+    "paths": [ "/manager/html", "/manager/text/list" ],
+    "status": 401,
+    "contentType": "text/html; charset=utf-8",
+    "headers": { "WWW-Authenticate": "Basic realm=\"Tomcat Manager Application\"" },
+    "contains": [ "401", "Unauthorized" ]
+  },
+  {
+    "paths": [ "/xmlrpc.php" ],
+    "status": 405,
+    "contentType": "text/plain; charset=utf-8",
+    "headers": { "Allow": "POST" },
+    "contains": [ "XML-RPC server accepts POST requests only." ]
+  },
+  {
+    "method": "POST",
+    "paths": [ "/xmlrpc.php" ],
+    "status": 200,
+    "contentType": "text/xml; charset=utf-8",
+    "contains": [ "<methodResponse>", "<fault>", "<name>faultCode</name>", "<int>-32601</int>" ]
+  },
+  {
+    "paths": [ "/wp-includes/wlwmanifest.xml", "/blog/wp-includes/wlwmanifest.xml", "/wordpress/wp-includes/wlwmanifest.xml", "/wp/wp-includes/wlwmanifest.xml", "/cms/wp-includes/wlwmanifest.xml", "/web/wp-includes/wlwmanifest.xml" ],
+    "status": 200,
+    "contentType": "application/xml; charset=utf-8",
+    "contains": [ "<manifest", "schemas.microsoft.com/wlw/manifest/weblog", "<clientType>WordPress</clientType>" ]
+  },
+  {
+    "paths": [ "/actuator/health" ],
+    "status": 200,
+    "contentType": "application/vnd.spring-boot.actuator.v3+json",
+    "contains": [ "\"status\"", "\"UP\"" ]
+  },
+  {
+    "paths": [ "/version" ],
+    "status": 200,
+    "contentType": "application/json",
+    "contains": [ "\"version\"", "\"1.8.4\"" ]
+  },
+  {
+    "paths": [ "/hudson" ],
+    "status": 403,
+    "contentType": "text/html; charset=utf-8",
+    "headers": { "X-Jenkins": "2.479.1" },
+    "contains": [ "Authentication required", "Jenkins" ]
+  },
+  {
+    "paths": [ "/geoserver", "/geoserver/web" ],
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "GeoServer", "name=\"username\"", "name=\"password\"" ]
+  },
+  {
+    "paths": [ "/bbs/forum.php" ],
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "Community", "General discussion", "href=\"/login\"" ]
+  },
+  {
+    "paths": [ "/api.php" ],
+    "status": 401,
+    "contentType": "application/json",
+    "contains": [ "\"error\"", "\"Unauthenticated\"" ]
+  },
+  {
+    "paths": [ "/developmentserver/metadatauploader" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "FAILED\n", "Cause: Missing or invalid metadata upload.\n" ]
+  },
+  {
+    "method": "POST",
+    "paths": [ "/developmentserver/metadatauploader" ],
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "contains": [ "FAILED\n", "Cause: Missing or invalid metadata upload.\n" ]
+  },
+  {
+    "paths": [ "/phpinfo.php", "/info.php" ],
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contains": [ "PHP Version 8.2.18", "DOCUMENT_ROOT", "/var/www/portal/public" ]
+  }
+]

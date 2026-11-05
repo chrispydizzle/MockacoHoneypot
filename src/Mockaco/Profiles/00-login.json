@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/login", "/user_Login_index.html", "/index/user/login.html", "/admin/auth/login", "/admin/login/index", "/boaform/admin/formLogin", "/Main_Login.asp"]},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Sign in - Northstar Portal</title><link rel=\"icon\" href=\"/favicon.ico\"><style>body{font:16px system-ui;background:#f4f6f8;color:#23364b}main{max-width:360px;margin:10vh auto;background:white;padding:2rem}label,input,button{display:block;width:100%;margin:1rem 0}input,button{box-sizing:border-box;padding:.7rem}</style></head><body><main><h1>Sign in</h1><form action=\"/login\" method=\"post\"><label>Username<input name=\"username\" autocomplete=\"username\" required></label><label>Password<input type=\"password\" name=\"password\" autocomplete=\"current-password\" required></label><button type=\"submit\">Sign in</button></form><a href=\"/\">Back to Northstar</a></main></body></html>\n"
+  }
+}

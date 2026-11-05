@@ -1,0 +1,10 @@
+{
+  "request": { "method": "POST", "route": "/" },
+  "response": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": [ { "$generator": "SQLInjection", "count": 8 } ]
+    }
+  }
+}

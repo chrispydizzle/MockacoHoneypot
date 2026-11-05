@@ -1,0 +1,10 @@
+{
+  "request": { "method": "POST", "route": "/eh/{action}/" },
+  "response": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": [ { "$generator": "ScriptInjection", "count": 8 } ]
+    }
+  }
+}

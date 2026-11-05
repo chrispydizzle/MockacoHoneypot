@@ -6,6 +6,11 @@
 	[State] SMALLINT NOT NULL,
 	[CreatedAt] DATETIME NOT NULL DEFAULT GETDATE(),
 	[UpdatedAt] DATETIME NOT NULL DEFAULT GETDATE(),
+    [LeaseToken] UNIQUEIDENTIFIER NULL,
+    [LeaseUntil] DATETIME2 NULL,
+    [LastError] NVARCHAR(MAX) NULL,
     CONSTRAINT [FK_HostJob_Job] FOREIGN KEY ([JobId]) REFERENCES [Job]([JobId]),
     CONSTRAINT [FK_HostJob_Host] FOREIGN KEY ([HostId]) REFERENCES [Host]([HostId])
 )
+
+CREATE INDEX [IX_HostJob_Host_Job] ON [dbo].[HostJob] ([HostId], [JobId]);

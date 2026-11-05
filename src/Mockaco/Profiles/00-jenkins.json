@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/hudson"},
+  "response": {
+    "status": 403,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "X-Jenkins": "2.479.1", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Jenkins - Authentication required</title></head><body><h1>Authentication required</h1><p>Anonymous is missing the Overall/Read permission.</p><p>Sign in to access Jenkins.</p></body></html>\n"
+  }
+}

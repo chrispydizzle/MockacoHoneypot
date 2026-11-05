@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD", "POST"], "route": "/developmentserver/metadatauploader"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "FAILED\nCause: Missing or invalid metadata upload.\n"
+  }
+}

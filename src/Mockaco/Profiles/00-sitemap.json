@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/sitemap.xml"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/xml; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>http://portal.internal/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url><url><loc>http://portal.internal/login</loc><changefreq>monthly</changefreq></url></urlset>\n"
+  }
+}

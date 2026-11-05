@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/wp-login.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache, must-revalidate, max-age=0, no-store, private", "Server": "nginx/1.24.0", "X-Powered-By": "PHP/8.2.18"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en-US\"><head><meta charset=\"UTF-8\"><meta name=\"robots\" content=\"noindex, nofollow\"><title>Log In &lsaquo; Northstar &#8212; WordPress</title><style>body{background:#f0f0f1;font:14px Arial;color:#3c434a}#login{width:320px;margin:8vh auto}form{background:white;padding:26px;border:1px solid #c3c4c7}input{display:block;margin:10px 0;width:95%;padding:8px}#wp-submit{background:#2271b1;color:white;border:0}</style></head><body class=\"login\"><div id=\"login\"><h1>Northstar</h1><form name=\"loginform\" id=\"loginform\" action=\"/wp-login.php\" method=\"post\"><p><label for=\"user_login\">Username or Email Address</label><input type=\"text\" name=\"log\" id=\"user_login\" autocomplete=\"username\"></p><p><label for=\"user_pass\">Password</label><input type=\"password\" name=\"pwd\" id=\"user_pass\" autocomplete=\"current-password\"></p><input type=\"hidden\" name=\"redirect_to\" value=\"/wp-admin/\"><input type=\"hidden\" name=\"testcookie\" value=\"1\"><input type=\"submit\" name=\"wp-submit\" id=\"wp-submit\" value=\"Log In\"></form><p><a href=\"/\">Back to Northstar</a></p></div></body></html>\n"
+  }
+}

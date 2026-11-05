@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/phpinfo.php", "/info.php"]},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0", "X-Powered-By": "PHP/8.2.18"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>phpinfo()</title><style>body{font:14px sans-serif;background:#fff}table{border-collapse:collapse;width:900px;margin:auto}td,th{border:1px solid #666;padding:6px}th{background:#99c}td:first-child{background:#ccf;font-weight:bold}h1{text-align:center}</style></head><body><h1>PHP Version 8.2.18</h1><table><tr><th colspan=\"2\">System</th></tr><tr><td>System</td><td>Linux app 6.1.0 x86_64</td></tr><tr><td>Server API</td><td>FPM/FastCGI</td></tr><tr><td>Loaded Configuration File</td><td>/usr/local/etc/php/php.ini</td></tr><tr><td>Configuration File (php.ini) Path</td><td>/usr/local/etc/php</td></tr><tr><th colspan=\"2\">PHP Variables</th></tr><tr><td>DOCUMENT_ROOT</td><td>/var/www/portal/public</td></tr><tr><td>SERVER_SOFTWARE</td><td>nginx/1.24.0</td></tr><tr><td>DB_HOST</td><td>mysql</td></tr><tr><td>DB_DATABASE</td><td>portal</td></tr><tr><td>APP_ENV</td><td>production</td></tr></table></body></html>\n"
+  }
+}

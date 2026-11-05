@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/.env.preprod", "/.env.stage", "/.env.staging", "/.env.staging.local", "/.env.uat"]},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "APP_NAME=\"Northstar Portal\"\nAPP_ENV=staging\nAPP_KEY=base64:qCbncV2Qwks/5gl0odW8gknnIGOg9L2RV9wIPmKU8as=\nAPP_DEBUG=false\nAPP_URL=http://staging.portal.internal\nLOG_LEVEL=info\nDB_CONNECTION=mysql\nDB_HOST=mysql\nDB_PORT=3306\nDB_DATABASE=portal_staging\nDB_USERNAME=portal\nDB_PASSWORD=R8f2pX6qK4m7T9vN\nCACHE_DRIVER=redis\nSESSION_DRIVER=redis\nREDIS_HOST=redis\nREDIS_PORT=6379\nQUEUE_CONNECTION=redis\nMAIL_MAILER=log\n"
+  }
+}

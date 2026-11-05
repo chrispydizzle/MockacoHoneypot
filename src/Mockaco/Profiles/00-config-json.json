@@ -1,0 +1,13 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/config.json"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": {
+      "app": {"name": "Northstar Portal", "version": "1.8.4", "environment": "production", "debug": false, "url": "http://portal.internal"},
+      "database": {"driver": "mysql", "host": "mysql", "port": 3306, "name": "portal", "username": "portal", "password": "R8f2pX6qK4m7T9vN"},
+      "redis": {"host": "redis", "port": 6379, "database": 0},
+      "storage": {"driver": "s3", "bucket": "northstar-portal-assets", "region": "us-east-1"}
+    }
+  }
+}

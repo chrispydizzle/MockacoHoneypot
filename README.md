@@ -1,531 +1,481 @@
-<h1>
-    <img src="https://github.com/natenho/Mockaco/raw/master/src/Mockaco/Resources/mockaco-logo.svg" width="64px" height="64px" alt="Mockaco">
-    Mockaco 
-</h1>
+# Behavior Atlas and Honeypot Collector
 
-Mockaco is an HTTP-based API mock server with fast setup.
+A small HTTP honeypot that records requests in SQL Server, observes source-host
+services through background Nmap scans and optional Shodan host lookups, and visualizes the capture in the
+separate Behavior Atlas dashboard.
 
-[![Main Build](https://github.com/natenho/Mockaco/actions/workflows/main-release.yml/badge.svg)](https://github.com/natenho/Mockaco/actions/workflows/main-release.yml) [![Docker Pulls](https://img.shields.io/docker/pulls/natenho/mockaco)](https://hub.docker.com/repository/docker/natenho/mockaco) [![Nuget](https://img.shields.io/nuget/dt/Mockaco?color=blue&label=nuget%20downloads)](https://www.nuget.org/packages/Mockaco/) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnatenho%2FMockaco.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnatenho%2FMockaco?ref=badge_shield)
+This started as a fork of [Mockaco](https://github.com/natenho/Mockaco). The
+general-purpose mock-server engine has been removed: no C# scripting compiler,
+Bogus integration, callbacks, global template state, verification API, or
+XML/form/binary response machinery. The `Mockaco` project paths and executable
+name remain so existing build, launch, and benchmark commands still work.
 
-## Features
+## Components
 
-- Simple JSON-based configuration
-- Pure C# scripting - you don't need to learn a new specific language or API to configure your mocks
-- Fake data generation - built-in fake data generation
-- Callback support - trigger another service call when a request hits your mocked API
-- State support - stateful mock support allow a mock to be returned based on a global variable previously set by another mock
-- Portable - runs in any [.NET Core compatible environment](https://github.com/dotnet/core/blob/main/release-notes/5.0/5.0-supported-os.md)
+| Path | Purpose |
+|---|---|
+| `src\Mockaco` | Request capture, small response profiles, and recon worker |
+| `src\Mockaco.Analytics` | Intelligence inventory, host dossiers, behavior atlas, and explicit host cleanup |
+| `HttpLog` | Existing SQL Server schema and recon lease migration |
+| `tools\ReconBenchmark` | Isolated SQL/Nmap concurrency and correctness checks |
+| `tools\CollectorChecks` | Published-application, SQL capture, and atlas integration checks |
+| `tools\ShodanChecks` | Offline Shodan fixtures, provider-isolated SQL queues, and atlas provenance checks |
+| `tools\RequestInventory.sql` | Read-only request-shape frequencies, source counts, and recent traffic |
 
-# Table of Contents
+The .NET solution builds without the old sibling SaltwaterTaffy checkout or
+Visual Studio SQL tooling. Deploy `HttpLog\HttpLog.sqlproj` separately using
+SQL Server Data Tools; it is not part of the application build.
 
-- [Get Started](#get-started)
-  * [Running the application](#running-the-application)
-  * [Creating a request/response template](#creating-a-requestresponse-template)
-  * [Sending a request and get the mocked response](#sending-a-request-and-getting-the-mocked-response)
-- [Request Template Matching](#request-template-matching)
-  * [Method attribute](#method-attribute)
-  * [Route attribute](#route-attribute)
-  * [Condition attribute](#condition-attribute)
-- [Response Template](#response-template)
-  * [Delay attribute](#delay-attribute)
-  * [Status attribute](#status-attribute)
-  * [Headers attribute](#headers-attribute)
-  * [Body attribute](#body-attribute)
-  * [Indented attribute](#indented-attribute)
-- [Callback Template](#callback-template)
-  * [Headers attribute](#headers-attribute-1)
-  * [Body attribute](#body-attribute-1)
-  * [Delay attribute](#delay-attribute-1)
-  * [Timeout attribute](#timeout-attribute)
-  * [Indented attribute](#indented-attribute-1)
-- [Scripting](#scripting)
-    + [Example: Accessing request data](#example-accessing-request-data)
-    + [Example: Generating fake data](#example-generating-fake-data)
-- [Verification](#verification)
-    + [Example: Verifying call to mocked endpoint](#example-verifying-call-to-mocked-endpoint)
-      + [Verify request without body](#verify-request-without-body)
-      + [Verify request with body](#verify-request-with-body)
-    + [Configure custom name of verification endpoint](#configure-custom-name-of-verification-endpoint)
-    + [Configure the duration of cache storing last request for verification](#configure-the-time-of-cache-storing-last-request-for-verification)
-    + [Verification summary](#verification-summary)
+## Run locally
 
+Install the .NET 10 SDK, SQL Server with the `HttpLog` schema deployed to `HttpDb`,
+and Nmap on PATH for recon. `global.json` selects a stable .NET 10 SDK.
 
-# Get Started
-
-## Running the application
-
-### .NET CLI
-
-Install and run as a dotnet tool:
-
-```console
-$ dotnet tool install -g mockaco
-$ mockaco --urls "http://localhost:5000"
+```powershell
+dotnet run --project .\src\Mockaco\Mockaco.csproj -- --urls http://127.0.0.1:15003
+dotnet run --project .\src\Mockaco.Analytics\Mockaco.Analytics.csproj
 ```
 
-A random local port is chosen if `--urls` parameter is not provided.
+Run these applications in separate terminals. The dashboard defaults to
+`http://127.0.0.1:15004`; `GET /ping` on the collector returns HTTP 200 with no
+body. Its development launch profile still binds port 15003 on all interfaces
+when `--urls` is omitted. The background worker scans recorded source addresses
+when the database contains job definitions, independently of incoming requests.
 
-### Docker
+Both applications use local `HttpDb` and Windows integrated authentication by
+default. `ConnectionStrings__HttpDb` overrides the collector, recon, and analytics
+connection. Existing `Recon__ConnectionString` remains supported for a separate
+recon connection when the shared override is absent; capture can similarly use
+`Honeypot__ConnectionString`.
 
-You can run Mockaco from the official [Docker image](https://hub.docker.com/r/natenho/mockaco) (replace ```/your/folder``` with an existing directory of your preference):
+Collector settings are loaded from `Settings` beside the executable, followed by
+environment-specific settings, environment variables, and command-line overrides.
+Profiles are also resolved relative to the executable, so published builds do not
+depend on the caller's working directory. Absolute paths are supported.
 
-```console
-$ docker run -it --rm -p 5000:5000 -v /your/folder:/app/Mocks natenho/mockaco
+## Response profiles
+
+Profiles live in `src\Mockaco\Profiles`. The original response families remain
+as fallbacks after the more specific decoy profiles:
+
+| Method and route | Response |
+|---|---|
+| `GET /{action}` | 200, empty body when no earlier profile matches |
+| `OPTIONS /{action}` | 204, existing CORS headers |
+| `POST /` | JSON-RPC envelope with eight SQL test strings |
+| `POST /json_rpc` | JSON-RPC envelope with SQL, quotation, RTL, and Unicode sample groups |
+| `POST /eh/{action}/` | JSON-RPC envelope with eight script-injection test strings |
+
+Routes use ASP.NET route-template matching: `/{action}` matches one path segment,
+not an arbitrary nested path. Nonmatching requests are still recorded and return
+501 by default. `Honeypot:DefaultStatusCode`, `Honeypot:UnmatchedStatusCode`, and
+`Honeypot:DefaultContentType` configure the response defaults.
+
+Profiles are ordinary JSON, loaded in filename order at startup; first match wins.
+Restart the collector after editing them. Use `--path C:\path\to\Profiles` or
+`Honeypot__ProfilesPath` to select another directory. For example:
+
+```json
+{
+  "request": { "method": "POST", "route": "/example" },
+  "response": {
+    "status": "OK",
+    "headers": { "Content-Type": "application/json" },
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": [ { "$generator": "SQLInjection", "count": 8 } ]
+    }
+  }
+}
 ```
 
-The port exposed by the container is 5000 (HTTP) by default.
+Status accepts a numeric HTTP code or a `System.Net.HttpStatusCode` name.
+Bodies default to JSON values. Each `$generator` object expands to an array of randomly
+selected strings from the retained NaughtyStrings corpus; supported generators
+are `SQLInjection`, `ScriptInjection`, `QuotationMarks`, `RightToLeftStrings`, and
+`TrickUnicode`. Other JSON content stays literal; it is not evaluated as C#.
 
-### Sources
+For literal responses, set `bodyFormat` to `text` and supply a string `body`;
+newlines and quotes are emitted as bytes, not as a JSON-quoted string.
+`bodyFormat: "base64"` decodes a string body into bytes, used for the favicon.
+Text and binary bodies are prepared at startup. JSON remains the default, so
+existing JSON string bodies keep their serialization behavior. No format reads
+files named by an incoming request or evaluates scripts.
 
-Or your can run it directly from sources:
-
-```console
-$ git clone https://github.com/natenho/Mockaco.git
-$ cd Mockaco\src\Mockaco
-$ dotnet run
-```
-
-A random local port is chosen if `--urls` parameter is not provided.
-
-## Creating a request/response template
-
-Create a file named `PingPong.json` under `Mocks` folder:
+Use either `method` or `methods`, and either `route` or `routes`, to share one
+response across explicit aliases. For example:
 
 ```json
 {
   "request": {
-	"method": "GET",
-	"route": "ping"
+    "methods": ["GET", "HEAD"],
+    "routes": ["/.git/config", "/{directory}/.git/config"]
   },
   "response": {
-	"status": "OK",
-	"body": {
-	  "response": "pong"
-	}
+    "status": 200,
+    "headers": { "Content-Type": "text/plain; charset=utf-8" },
+    "bodyFormat": "text",
+    "body": "[core]\n\trepositoryformatversion = 0\n\tbare = false\n"
   }
 }
 ```
 
-This example contains a request/response template, meaning "Whenever you receive a ```GET``` request in the route ```/ping```, respond with status ```OK``` and the body ```{ "response": "pong" }```"
-	
-## Sending a request and getting the mocked response
+HEAD must be listed to match a profile. Its status and representation headers
+match GET, including the byte `Content-Length`, but no body is sent.
 
-```
-curl -iX GET http://localhost:5000/ping
+### Observed-request decoys
 
-HTTP/1.1 200 OK
-Date: Wed, 13 Mar 2019 00:22:49 GMT
-Content-Type: application/json
-Server: Kestrel
-Transfer-Encoding: chunked
+The `00-*.json` files take precedence over the generic GET fallback. They cover
+the observed config-discovery requests and common paths from the request
+database, using a fictional Northstar Portal installation:
 
-{
-	"response": "pong"
-}
-```
+| Request family | Representation |
+|---|---|
+| `/.env`, production/backup variants, `/{directory}/.env` | Production-style dotenv with MySQL, Redis, SMTP, and synthetic AWS values |
+| Development, staging/UAT, test/CI, and example dotenv variants | Environment-appropriate settings rather than the same response for every suffix |
+| `/.git/config`, `/{directory}/.git/config` | Git INI with origin and main-branch tracking; includes `assets..`, `media..`, and `static..` prefixes |
+| `/.aws/credentials`, `/.aws/config`, `/config.json` | Consistent INI/JSON configuration |
+| `/docker-compose.prod.yml`, `.yml` and `.yaml` variants | Compose YAML for nginx, the portal, MySQL, and Redis |
+| `/`, index/landing aliases, login paths, `/bbs/forum.php` | HTML pages and forms; login submissions never authenticate |
+| `/captcha`, `/favicon.ico`, `/robots.txt`, `/sitemap.xml` | SVG, real ICO bytes, crawler text, and XML |
+| `/cgi-sys/defaultwebpage.cgi`, PHP info paths | Hosting and PHP diagnostic-style HTML |
+| `/wp-login.php`, WordPress manifest paths, `/xmlrpc.php` | Login HTML, WLW XML, GET 405/Allow header, and a static POST XML-RPC fault |
+| Tomcat manager, `/hudson`, `/geoserver/web/` | Basic-auth challenge, Jenkins-style denial, and GeoServer-style landing page |
+| `/developmentserver/metadatauploader` | SAP-style `FAILED` / `Cause` text for GET/HEAD/POST; a synthetic error stub, not an upload service |
+| `/actuator/health`, `/version`, `/api.php` | JSON health/version and unauthenticated API responses |
 
-# Request Template Matching
+These are bounded static decoys, not running WordPress, Tomcat, Jenkins, PHP,
+or GeoServer installations. POST login/XML-RPC/metadata-uploader responses do not
+parse submissions or implement those protocols. The metadata-uploader profile
+never saves or executes uploads. Request-body logging remains unchanged.
+All apparent passwords, keys, hostnames, and configuration data in these profiles
+are invented fixtures; they are not taken from local files, environment variables,
+or real accounts. Keep the fixture values consistent when customizing the persona.
+Unlisted paths and methods retain the existing fallback behavior.
 
-Use the ```request``` attribute to provide the necessary information for the engine to decide which response will be returned. All criteria must evaluate to ```true``` to produce the response of a given template.
+To choose additional profiles from a current capture, run the reusable inventory:
 
-## Method attribute
-
-Any request with the matching HTTP method will return the response. Supported HTTP methods: GET, PUT, DELETE, POST, HEAD, TRACE, PATCH, CONNECT, OPTIONS.
-If omitted, defaults to ```GET```.
-
-### Example
-```json
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {
-	"status": "OK"
-  }
-}
-```
-
-## Route attribute
-
-Any request with the matching route will return the response. Any AspNet route template is supported.
-
-If omitted, empty or null, defaults to base route (/).
-
-### Example
-```json
-{
-  "request": {
-	"route": "customers/{id}/accounts/{account_id}"
-  },
-  "response": {
-	"status": "OK"
-  }
-}
+```powershell
+New-Item -ItemType Directory -Force .\artifacts | Out-Null
+sqlcmd -S localhost -E -d HttpDb -b -r1 -v Top=100 -i .\tools\RequestInventory.sql -y0 -w65535 -f65001 -o .\artifacts\request-inventory.json
 ```
 
-## Condition attribute
+The JSON reports all-time frequency, distinct known source counts, and the last
+30 days using the database clock. Paths retain their case and requests are not
+deduplicated. The query changes no application data; its intermediate table is
+session-local. Source counts are all-time, including on the recent list.
+Use both frequency and source breadth: one repeat source can dominate raw counts.
 
-Any condition that evaluates to ```true``` will return the response. The condition is suitable to be used with C# scripting.
+The old templates interpolated enumerable type names and discarded some generator
+results. These profiles emit actual sample arrays inside the same
+`id`/`jsonrpc`/`result` envelope. Legacy local `Mocks` files are not deleted, read,
+or included in published builds. They must be translated to this profile format;
+this is deliberately not a replacement implementation of the Mockaco language.
 
-If omitted, empty or null, defaults to ```true```.
+Capture writes the source address, target host, case-preserving path, method,
+query string, and database-default timestamp before responding. It does not parse
+or store bodies or headers, matching the existing SQL capture scope. Concurrent
+first requests share one source record. A failed database write returns 503
+rather than the old middleware's misleading empty 200. The retired
+`/_mockaco/verification` path is now an ordinary captured, unmatched request.
 
-### Example
-```
-{
-  "request": {
-	"condition": "<#= DateTime.Now.Second % 2 == 0 #>"
-  },
-  "response": {
-	"status": "OK"
-  }
-}
-```
+## Build and publish
 
-# Response Template
-
-## Delay attribute
-
-Defines a minimum response time in milliseconds.
-
-If omitted, empty or null, defaults to ```0```.
-
-### Example
-```json
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {
-	"delay": 4000,
-	"status": "OK"
-  }
-}
+```powershell
+dotnet build .\Mockaco.sln -c Release
+dotnet test .\Mockaco.sln -c Release
+node --test .\test\Mockaco.Analytics.Tests\dashboard.test.mjs
+dotnet publish .\src\Mockaco\Mockaco.csproj -c Release -o .\artifacts\collector-publish
+dotnet .\artifacts\collector-publish\Mockaco.dll --urls http://127.0.0.1:15003
 ```
 
-## Status attribute
+The published collector requires the ASP.NET Core Runtime 10 and includes its
+settings and profiles. It is no longer packaged as the upstream `mockaco` NuGet
+tool. CI builds/tests the applications and produces artifacts; it does not
+automatically publish packages, Docker images, or GitHub releases.
 
-Sets the HTTP status code for the response. Can be a string or a number, as defined in [System.Net.HttpStatusCode](https://docs.microsoft.com/en-us/dotnet/api/system.net.httpstatuscode?view=netcore-2.2) enumeration.
+To check a published collector against a disposable SQL database:
 
-If omitted, empty or null, defaults to ```OK``` (200).
-
-### Example
-```json
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {    
-	"status": "Forbidden"
-  }
-}
+```powershell
+dotnet run --project .\tools\CollectorChecks -c Release -- --app .\artifacts\collector-publish\Mockaco.dll
 ```
 
-## Headers attribute
+This starts its own collector on an ephemeral loopback port, sends concurrent
+requests, checks the original profiles plus every case in
+`test\Mockaco.Tests\Responses\DecoyRequests.json` (including HEAD parity, native
+content types, and binary/XML/JSON bodies), checks capture failure handling, and
+reads the resulting records through the analytics store. It creates no scan job
+definitions and never uses the live `HttpDb`. The SQL account needs create/drop
+database permission; `--sql` overrides the master connection. The owned process
+and temporary database are removed on completion. Representative received
+dotenv, Compose, Git, and icon bodies are retained under the ignored
+`artifacts\collector-responses` directory.
 
-Sets any HTTP response headers.
+## Recon worker and concurrency
 
-### Example
-```json
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {    
-	"status": "OK",
-	"headers": {
-		"X-Foo": "Bar"
-	}
-  }
-}
+Before starting this version against an existing database, apply the additive,
+rerunnable migration (stop old server instances first):
+
+```powershell
+sqlcmd -S localhost -E -d HttpDb -b -i .\HttpLog\Migrations\001-ReconLeases.sql
+sqlcmd -S localhost -E -d HttpDb -b -i .\HttpLog\Migrations\002-ShodanLookup.sql
 ```
 
-## Body attribute
+Fresh deployments of `HttpLog.sqlproj` already include these columns.
+Configure `Recon` in `src\Mockaco\Settings\appsettings.json`, or use environment
+variables such as `$env:Recon__Workers = '16'`. Workers default to eight; there is no
+hard-coded concurrency ceiling. Each worker owns one asynchronous Nmap process.
+The default profile remains 5,000 TCP ports, `-Pn -sV --version-all -O`, with a
+10-minute Nmap host timeout and an 11-minute process deadline. `Recon:Ports`
+optionally replaces `TopPorts` with an explicit Nmap port list.
 
-Sets the HTTP response body.
+### Shodan host lookups
 
-If omitted, empty or null, defaults to empty.
+Shodan is disabled until `Shodan__ApiKey` is set in the collector's environment.
+Supply the real key locally, not in source control or command-line arguments.
+The worker calls only `GET https://api.shodan.io/shodan/host/{ip}` with
+`history=false&minify=false`: this retrieves existing records, **not an on-demand
+scan**. It does not submit targets to the scan API or spend scan credits.
+Shodan account permissions still apply.
 
-The ```Content-Type``` header is used to process output formatting for certain MIME types. If omitted, defaults to ```application/json```.
+Stop **all old collectors** before migrating and upgrading: old workers do not
+understand providers and could run Nmap against Shodan jobs. Upgrade the atlas
+against the migrated database too. Migration 002 is additive and repeatable;
+existing job definitions become `Nmap`, and fresh SSDT deployments include the
+same schema.
 
-### Example
-```json
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {    
-	"status": "OK",
-	"body": {
-	  "foo": "Bar"
-	}
-  }
-}
+Once configured, the Shodan worker creates its job definition and lazily queues
+one lookup per host in the recon database, including existing hosts and newly
+captured addresses. Nmap and Shodan cannot claim each other's jobs. Completed
+lookups are not refreshed automatically. No requests are sent directly to those
+hosts by the Shodan worker. Its connection defaults to the recon connection;
+`Shodan__ConnectionString` can override it, unless `ConnectionStrings__HttpDb`
+is set (the shared setting takes precedence).
+
+| Setting | Default | Behavior |
+|---|---|---|
+| `Shodan__RequestIntervalSeconds` | `1` | Minimum delay between lookups in this process |
+| `Shodan__RequestTimeoutSeconds` | `30` | HTTP request deadline |
+| `Shodan__PollIntervalSeconds` | `2` | Idle queue polling |
+| `Shodan__RetryDelaySeconds` | `15` | Initial transient-error backoff |
+| `Shodan__MaxRetryDelaySeconds` | `300` | Exponential-backoff ceiling; a longer `Retry-After` wins |
+
+Use one active Shodan worker process per API key, or coordinate your aggregate
+request rate externally. HTTP 429, 408, 5xx, network failures, timeouts, and
+malformed responses release the job back to pending and retry with backoff.
+HTTP 401/403 releases the job and pauses only Shodan until the collector is
+restarted with working credentials/permissions. Other rejected requests fail
+that job. Shutdown cancels the HTTP request and releases its lease; an abandoned
+lease expires and can be reclaimed. A Shodan `404` with "No information available
+for that IP." completes as no-data, rather than retrying forever.
+
+`dbo.ReconEvidence` retains the full JSON response, HTTP status, and retrieval
+timestamp, keyed by `HostJobId`. Banners, CVEs, organization, location, and other
+returned fields remain in that JSON. Hostnames and services also populate the
+existing discovery tables. The atlas labels their provider and shows Shodan's
+per-banner observation timestamp separately from retrieval time; **retrieving
+old Shodan data is not a fresh scan or a confirmed vulnerability**. Raw JSON
+is available in the host dossier, loaded separately from the collection payload.
+
+Offline verification, using fake HTTP responses and an owned disposable SQL
+database (no API key or external scan required):
+
+```powershell
+dotnet test .\test\Mockaco.Tests -c Release --filter "FullyQualifiedName~Shodan|FullyQualifiedName~ReconWorkerTest"
+dotnet run --project .\tools\ShodanChecks -c Release
 ```
 
-See also:
+`ShodanChecks` accepts `--sql` for a master connection with create/drop database
+permission. It removes only its own uniquely named database. `CollectorChecks`
+explicitly disables Shodan in its child process even if the parent has a key.
 
- - [Mocking XML responses](https://github.com/natenho/Mockaco/blob/master/doc/Mocking-XML.md)
- - [Mocking Binary/Raw responses](https://github.com/natenho/Mockaco/blob/master/doc/Mocking-RAW.md)
+Claims are serialized briefly inside SQL transactions, not during scans.
+Job states are 0=pending, 1=completed (unchanged), 2=running, 3=failed.
+Running jobs have an owner token and an expiring lease; a restarted worker
+reclaims abandoned jobs after expiry. Shutdown kills and awaits child processes
+and returns owned jobs to pending. Failed jobs retain `LastError` and are not
+silently retried forever. To explicitly retry a failed job:
 
-## Indented attribute
-
-Sets the response body indentation for some structured content-types. If ommited, defaults to ```true```.
-
-### Example
-```json
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {    
-	"status": "OK",
-	"body": {
-	  "this": "json content",
-	  "is": "supposed to be",
-	  "in": "the same line"
-	},
-	"indented": false
-  }
-}
+```sql
+UPDATE dbo.HostJob SET State = 0, LastError = NULL WHERE HostJobId = <id> AND State = 3;
 ```
 
-Result:
+Results and completion are committed together; stale owners cannot publish results.
+Only ports reported as `open` are saved. Nmap must be on PATH; OS detection
+requires the usual Nmap/Npcap privileges on Windows. The SaltwaterTaffy dependency
+is no longer needed.
 
-```
-curl -iX GET http://localhost:5000
+### Repeatable recon benchmark
 
-HTTP/1.1 200 OK
-Date: Wed, 31 Jul 2019 02:57:30 GMT
-Content-Type: application/json
-Server: Kestrel
-Transfer-Encoding: chunked
-
-{"this":"json content","is":"supposed to be","in":"the same line"}
+```powershell
+dotnet run --project .\tools\ReconBenchmark -c Release -- --repetitions 2 --targets 16
 ```
 
-# Callback Template
+This exercises the real worker, SQL claim/result path, and Nmap at 2/4/8/16 workers.
+It creates and removes its own uniquely named SQL database and loopback HTTP
+listeners; it never reads visitor targets from `HttpDb`. It checks concurrent
+claims, stale-lease fencing, migration repeatability, cancellation, failures,
+and open/closed port controls. The SQL account needs permission to create/drop
+the isolated benchmark database.
 
-Calls another API whenever a request arrives.
+The default controlled profile scans ports 8080 (owned HTTP service) and 8081
+(closed), preserving exhaustive service and OS detection. This isolates concurrency
+without spending minutes probing unrelated wildcard-bound services on the host.
+It is not a production 5,000-port throughput prediction. Add `--full-profile`
+to use the unchanged production port set; this also probes existing local services
+and can take substantially longer. `--sql` selects a SQL connection;
+`--output` selects the JSON results file (default `tools\ReconBenchmark\results.json`).
+Results include throughput, p95 scan duration, observed process concurrency,
+failures, missed HTTP services, closed-port discoveries, and duplicate claims.
+Use `--verify-only` to repeat integration checks and the positive-control scan
+without rerunning the timed benchmark.
 
-```
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {
-	"status": "OK",
-	"body": {
-	  "currentTime": "<#= DateTime.Now.ToString() #>"
-	}
-  },
-  "callback": {
-	"method": "POST",
-	"timeout": 2000,
-	"headers": {		
-		"X-Foo": "Bar"
-	},
-	"body": {
-		"message": "The response was <#= Response.Body["currentTime"]?.ToString() #>"
-	},
-	"url": "https://postman-echo.com/post",
-	"delay": 5000
-  }
-}
+### Recon atlas
+
+Run the separate analytics dashboard:
+
+```powershell
+dotnet run --project .\src\Mockaco.Analytics\Mockaco.Analytics.csproj
 ```
 
-## Headers attribute
+Open `http://127.0.0.1:15004`. The dashboard connects to local `HttpDb` using
+Windows authentication; override it with `ConnectionStrings__HttpDb`, or use
+`--urls` to change the listening address. It does not run the honeypot or recon
+worker, change the schema, contact captured hosts, or require external web assets.
+Use SQL Server 2017 or later with database compatibility level 130 or later
+and apply migrations 001 and 002 before running against an existing database.
 
-Sets any HTTP callback request headers.
+The default **Intelligence** view covers every stored host, including hosts
+without captured HTTP requests. It shows collection totals, Shodan coverage,
+reported countries and organizations, and a 50-row paginated inventory.
+Search IP, organization, ISP, ASN, country, city, OS, domain, hostname or CVE;
+filter by lookup state, reported CVEs or observed ports; sort by latest request,
+request volume, port count or CVE count. Geography and organization rankings
+are clickable filters. Totals and rankings always describe the whole collection.
 
-## Body attribute
+Open a source for its **Overview**, **Services**, **CVEs**, **Traffic** and
+**Raw evidence** dossier. Service records retain Nmap/Shodan provenance,
+observation/retrieval times, banners, HTTP/TLS/SSH metadata and original fields.
+CVEs show provider-supplied scores and verification flags, not independent
+findings. Requests retain original queries and page back through all traffic.
+Full stored JSON can be viewed or downloaded, including responses with no host
+information. Large lists render incrementally without discarding evidence.
+URLs preserve the selected host and dossier tab; Escape closes the dossier
+and arrow keys navigate tabs. The latest stored Shodan response is fetched when
+a dossier opens; older responses are fetched on demand.
 
-Sets the HTTP callback request body.
+The read-only endpoints are `GET /api/intelligence` (`query`, `status`, `sort`,
+zero-based `page`), `GET /api/sources/{hostId}/requests` (`cursor`) and
+`GET /api/sources/{hostId}/evidence/{hostJobId}` (`download=true` for a file).
+There is no refresh timer or dashboard generation batch. **Refresh collection**
+rereads SQL immediately; loading the inventory or changing its filters/page
+also reads current data. **Behavior atlas > Refresh data** rebuilds the cached
+behavior analysis from SQL. Neither requires a build, publish, or collector
+restart. The collector captures traffic and processes new recon work while
+running, but completed Nmap/Shodan jobs are not automatically repeated.
+Refreshing the dashboard does not rescan hosts or retrieve new Shodan results.
+Close and reopen a dossier to reread its stored evidence.
 
-If omitted, empty or null, defaults to empty.
+**Clean up hosts** previews malformed and non-public addresses, including
+private/local, shared, documentation, benchmark, multicast and reserved ranges.
+It shows every matching address with its reason and the linked record counts.
+**Purge hosts and linked data** permanently deletes that reviewed set of host
+IDs and their requests, headers, recon jobs, service observations, hostnames and
+raw recon evidence in one transaction. The server rechecks addresses before
+deleting and rejects any public host in a submitted selection. Public hosts and
+shared job definitions remain intact. Failed transactions roll back all deletes.
 
-The ```Content-Type``` header is used to process output formatting for certain MIME types. If omitted, defaults to ```application/json```.
+Cleanup follows the [IANA IPv4](https://www.iana.org/assignments/iana-ipv4-special-registry/)
+and [IPv6](https://www.iana.org/assignments/iana-ipv6-special-registry/) special-purpose
+ranges, with multicast/reserved IPv6 handling. IPv4-mapped IPv6 addresses use the
+embedded IPv4 classification. Public exceptions and conditionally routable
+Teredo/6to4 addresses are retained; this is not a live routing/reachability test.
+The cleanup API is `GET /api/intelligence/non-public-hosts` for the preview and
+`POST /api/intelligence/non-public-hosts/purge` with JSON `{"hostIds":[...]}` for
+the explicit deletion. Purging requires SQL DELETE permission; browsing and
+refresh remain read-only.
 
-## Delay attribute
+After a successful purge the inventory reloads and the behavior cache is
+invalidated, so the Behavior atlas rebuilds on its next opening. Hosts added
+after the preview are not silently included. Linked counts can grow while the
+collector receives traffic. Cleanup does not block future capture: traffic
+from the same private address can create a new host record again. Other open
+dashboard tabs or separate analytics processes still need their own refresh.
 
-The time to wait after a response before performing the callback.
+Select **Behavior atlas** for the existing traffic exploration workspace:
 
-## Timeout attribute
+The constellation groups sources by normalized route/method sets, with an
+individual-source view, pan/zoom, and optional separation of overlapping points.
+Pan by dragging, arrow keys, or the **Pan view** direction buttons.
+Coordinates use centered PCA on normalized, log-count TF-IDF profiles; the
+display reports retained variance. Source details show exact full-profile cosine
+similarities, raw requested paths, paginated requests, hostnames, and full service
+banners. Similar behavior is not attribution. Timing and request order are not
+part of this fingerprint.
 
-Defines a time in milliseconds to wait the callback response before cancelling the operation.
+The linked matrix counts distinct sources per requested endpoint family and
+observed service. Sources can belong to multiple rows/columns. IP search, minimum
+requests, and fingerprint selection define the matrix cohort; selecting a cell
+highlights its sources without changing the denominator. Count and row-percentage
+views and service search cover all observed services. The matrix renders eight
+service columns per page; use the arrows or page picker to reach any page, and
+scroll within the table when needed. Paging never changes counts, row
+denominators, heat scales, or the selected cohort.
+Missing observations are separate from unidentified or `tcpwrapped` services.
 
-## Indented attribute
+Dates filter incoming requests using the database clock: From is inclusive and
+Before is exclusive. Service observations span all stored recon results, even
+when request dates are filtered; their timestamps are job-update times. The
+server caches the last requested date window in memory; **Refresh data** explicitly
+reloads it. All sources in the window participate, without sampling.
 
-Sets the callback body indentation for some structured content-types. If ommited, defaults to ```true```.
+Run the focused analytics checks:
 
-# Scripting
-
-Every part of the template file is scriptable, so you can add code to programatically generate parts of the template.
-
-Use C# code surrounded by ```<#=``` and ```#>```.
-
-The template code and generation will run for each request.
-
-It's possible to access request data within the response template. In the same way, response data can be used within the callback request template.
-
-The scripts are compiled and executed via [Roslyn](https://github.com/dotnet/roslyn/wiki/Scripting-API-Samples).
-
-### Example
-```
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {
-	"status": "OK",
-	"body": {
-	  "currentYear": "<#= DateTime.Now.Year #>"
-	}
-  }
-}
-```
-
-The code tag structure resembles [T4 Text Template Engine](https://github.com/mono/t4). In fact, this project leverages parts of T4 engine code to parse mock templates.
-
-### Example: Accessing request data
-
-There is a ```Request``` object available to access request data.
-
-```
-{
-  "request": {
-	"method": "PUT",
-	"route": "customers/{id}"
-  },
-  "response": {
-	"status": "OK",
-	"body": {
-	  "url": "<#= Request.Url?.ToString() #>",
-	  "customerId": "<#= Request.Route["id"]?.ToString() #>",
-	  "acceptHeader": "<#= Request.Header["Content-Type"]?.ToString() #>",
-	  "queryString": "<#= Request.Query["dummy"]?.ToString() #>",
-	  "requestBodyAttribute": "<#= Request.Body["address"]?[0]?.ToString() #>"
-	}
-  }
-}
-```
-
-### Example: Generating fake data
-
-There is a ```Faker``` object available to generate fake data.
-
-```
-{
-  "request": {
-	"method": "GET"
-  },
-  "response": {
-	"status": "OK",
-	"body": {
-	  "id": "<#= Faker.Random.Guid() #>",
-	  "fruit": "<#= Faker.PickRandom(new[] { "apple", "banana", "orange", "strawberry", "kiwi" }) #>",
-	  "recentDate": <#= JsonConvert.SerializeObject(Faker.Date.Recent()) #>
-	}
-  }
-}
-```
-
-The built-in fake data is generated via [Bogus](https://github.com/bchavez/Bogus).
-The faker can also generate localized data using ```Accept-Language``` HTTP header. Defaults to ```en``` (english) fake data.
-
-# Verification
-
-There is a default endpoint provided that let's you verify the  last call for each mocked endpoint. The default path for this endpoint is ```http://localhost:5000/_mockaco/verification?route={path to verify}```.
-
-## Example: Verifying call to mocked endpoint
-
-### Verify request without body
-
-- If you have just called ```http://localhost:5000/hello/Jane Doe```, the verification endpoint
-called in the following way: ```http://localhost:5000/_mockaco/verification?route=/hello/Jane Doe``` will respond like so: 
-```
-{
-    "route": "/hello/Hello There",
-    "timestamp": "14:15",
-    "body": ""
-}
+```powershell
+dotnet test .\test\Mockaco.Analytics.Tests\Mockaco.Analytics.Tests.csproj
+node --test .\test\Mockaco.Analytics.Tests\dashboard.test.mjs .\test\Mockaco.Analytics.Tests\intelligence.test.mjs
 ```
 
-### Verify request with body
+For live browser checks against this populated capture, with the dashboard
+running and `agent-browser` installed:
 
-- If you have just called ```http://localhost:5000/hello/Jane Doe```, with the following body:
-```
-{
-    "username": "Jane1",
-    "lastname": "Doe1"
-}
-```
-the verification endpoint called in the following way: ```http://localhost:5000/_mockaco/verification?route=/hello/Jane Doe``` will respond like so: 
-```
-{
-    "route": "/hello/Jane Doe",
-    "timestamp": "14:39",
-    "body": "{\r\n    \"username\": \"Jane1\",\r\n    \"lastname\": \"Doe1\"\r\n}"
-}
+```powershell
+agent-browser --session atlas-check open http://127.0.0.1:15004
+$checks = Get-Content -Raw .\test\Mockaco.Analytics.Tests\browser-checks.js
+$encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($checks))
+agent-browser --session atlas-check eval -b $encoded
+agent-browser --session atlas-check close
 ```
 
-Both JSON body and x-www-form-urlencoded body are supported.
+The same browser-evaluation command can run
+`test\Mockaco.Analytics.Tests\ui-polish-checks.js` for service-page navigation,
+focus, touch targets, pointer panning, and responsive layout. Run it on a fresh
+all-time view. `tools\MeasureAtlasUi.js` measures matrix selection and service
+search through the next paint; use the same viewport and capture when comparing
+runs. These timings are a local interaction benchmark, not Web Vitals INP.
+`test\Mockaco.Analytics.Tests\intelligence-browser-checks.js` uses offline API
+fixtures to exercise inventory paging/filtering, dossiers, keyboard navigation,
+full evidence, empty/error states and stale-response races. Run it at desktop
+and mobile viewport sizes. `tools\ShodanChecks` also checks the intelligence
+queries, literal search, evidence ownership and request paging in its owned SQL
+database. It also checks non-public classification, transactional cleanup,
+public-host rejection, cache invalidation and late-worker handling.
+`test\Mockaco.Analytics.Tests\host-cleanup-browser-checks.js` uses offline
+fixtures for preview/purge failures, exact selection, full candidate browsing,
+focus, mobile layout and post-purge refresh; it never writes to the real database.
 
-## Configure custom name of verification endpoint
+To include the published cleanup HTTP endpoints in the owned-database checks:
 
-You can configure the default name of verification enpoint by modifying ```Mockaco.VerificationEndpointName``` and ```Mockaco.VerificationEndpointPrefix``` fields in ``appsettings.json`` file. So if you will rename it like so:
-
-```
-"Mockaco": {
-    ...
-    "VerificationEndpointName": "customVerify",
-    "VerificationEndpointPrefix": "_internal"
-  },
-```
-
-You will be able to access the verification endpoint on ```http://localhost:5000/_internal/customVerify```
-
-## Configure the duration of cache storing last request for verification
-
-Each request with the exact time of being ivoked, body and path is being stored in the internal .Net cache for 60 minutes. You can configure this time by changing
-
-```
-"Mockaco": {
-    ...
-    "MatchedRoutesCacheDuration": 60, 
-    ...
-  },
-```
-in ```appsettings.json```.
-
-## Verification summary
-
-Let's assume that you have the following endpoints mocked:
-```
-http://localhost:5000/hello/{message}
-http://localhost:5000/test
+```powershell
+dotnet publish .\src\Mockaco.Analytics\Mockaco.Analytics.csproj -c Release -o .\artifacts\host-cleanup-publish
+dotnet run --project .\tools\ShodanChecks -c Release -- --app .\artifacts\host-cleanup-publish\Mockaco.Analytics.dll
 ```
 
-With the verification functionality you can check the last performed call for each of these 2 endpoints and different variations of {message}, so if you called these 2 endpoints in the following ways:
+The harness starts and stops its own loopback analytics process and drops only
+its own uniquely named database.
 
-```
-curl --location --request GET 'http://localhost:5000/hello/Jane Doe'
-curl --location --request GET 'http://localhost:5000/hello/Marzipan'
-curl --location --request GET 'http://localhost:5000/hello/There!'
-curl --location --request GET 'http://localhost:5000/test'
-```
+## License and attribution
 
-You can perform these checks:
-
-```
-http://localhost:5000/_mockaco/verification?route=/hello/Jane Doe
-http://localhost:5000/_mockaco/verification?route=/hello/Marzipan
-http://localhost:5000/_mockaco/verification?route=/hello/There!
-http://localhost:5000/_mockaco/verification?route=/test
-```
-You cannot perform verification based on the generic url like ```http://localhost:5000/_mockaco/verification?route=/hello/{message}```
-
-Icon made by [Freepik](https://www.freepik.com/ "Freepik") from [www.flaticon.com](https://www.flaticon.com/ "Flaticon") is licensed by [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/ "Creative Commons BY 3.0")
-
-
-## License
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnatenho%2FMockaco.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnatenho%2FMockaco?ref=badge_large)
+Apache License 2.0; see [LICENSE](LICENSE) for the original Mockaco attribution
+and dependency notices. Removing the framework does not remove upstream credit.

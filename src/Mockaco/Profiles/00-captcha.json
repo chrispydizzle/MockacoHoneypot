@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/captcha"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "image/svg+xml", "Cache-Control": "no-store", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"180\" height=\"60\" viewBox=\"0 0 180 60\"><rect width=\"180\" height=\"60\" fill=\"#edf0e7\"/><path d=\"M0 15L180 45M0 45L180 10M30 0L140 60\" stroke=\"#9ca88f\" fill=\"none\"/><text x=\"18\" y=\"42\" font-family=\"monospace\" font-size=\"34\" letter-spacing=\"7\" fill=\"#354d3d\" transform=\"rotate(-3 90 30)\">7K4NP</text></svg>\n"
+  }
+}

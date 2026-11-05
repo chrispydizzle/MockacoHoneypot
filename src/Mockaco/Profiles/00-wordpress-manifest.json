@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/wp-includes/wlwmanifest.xml", "/{site}/wp-includes/wlwmanifest.xml"]},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/xml; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<manifest xmlns=\"http://schemas.microsoft.com/wlw/manifest/weblog\"><options><clientType>WordPress</clientType><supportsKeywords>Yes</supportsKeywords><supportsFileUpload>Yes</supportsFileUpload></options><weblog><serviceName>WordPress</serviceName><homePageLinkText>View site</homePageLinkText><adminLinkText>Dashboard</adminLinkText></weblog></manifest>\n"
+  }
+}

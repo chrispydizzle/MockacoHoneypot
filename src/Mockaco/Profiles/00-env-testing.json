@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/.env.ci", "/.env.test", "/.env.testing", "/.env.test.local"]},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "APP_NAME=\"Northstar Portal\"\nAPP_ENV=testing\nAPP_KEY=base64:qCbncV2Qwks/5gl0odW8gknnIGOg9L2RV9wIPmKU8as=\nAPP_DEBUG=true\nAPP_URL=http://localhost\nDB_CONNECTION=mysql\nDB_HOST=mysql\nDB_PORT=3306\nDB_DATABASE=portal_test\nDB_USERNAME=portal\nDB_PASSWORD=R8f2pX6qK4m7T9vN\nCACHE_DRIVER=array\nSESSION_DRIVER=array\nQUEUE_CONNECTION=sync\nMAIL_MAILER=array\n"
+  }
+}

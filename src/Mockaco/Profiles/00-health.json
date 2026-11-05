@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/actuator/health"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/vnd.spring-boot.actuator.v3+json", "Server": "nginx/1.24.0"},
+    "body": {"status": "UP"}
+  }
+}

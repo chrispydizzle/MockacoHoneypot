@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/robots.txt"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "User-agent: *\nDisallow: /admin/\nDisallow: /backup/\nDisallow: /config/\nDisallow: /vendor/\nSitemap: http://portal.internal/sitemap.xml\n"
+  }
+}

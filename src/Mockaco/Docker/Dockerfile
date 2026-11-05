@@ -1,27 +1,21 @@
-FROM mcr.microsoft.com/dotnet/aspnet:5.0-alpine AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+RUN apt-get update && apt-get install -y --no-install-recommends nmap && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 EXPOSE 5000
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 COPY ./src/Mockaco/Mockaco.csproj /src/Mockaco/
 WORKDIR /src/Mockaco
 RUN dotnet restore
 WORKDIR /repo
 COPY ./ ./
 WORKDIR /repo/src/Mockaco
-RUN dotnet build "Mockaco.csproj" -c Release -o /app/build
-RUN find -iname gitversion.json -exec cat {} \;
-
-FROM build AS publish
 RUN dotnet publish "Mockaco.csproj" -c Release -o /app/publish
 
 FROM base AS final
-ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV ASPNETCORE_ENVIRONMENT=Docker
 WORKDIR /app
-COPY --from=publish /app/publish .
-COPY ./src/Mockaco/Mocks/hello.json /app/Mocks/
-COPY ./src/Mockaco/Settings /app/Settings
-VOLUME /app/Mocks
+COPY --from=build /app/publish .
+VOLUME /app/Profiles
 VOLUME /app/Settings
 ENTRYPOINT ["dotnet", "Mockaco.dll"]

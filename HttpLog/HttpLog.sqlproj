@@ -66,6 +66,7 @@
     <Build Include="HostJob.sql" />
     <Build Include="Job.sql" />
     <Build Include="Discovery.sql" />
+    <Build Include="ReconEvidence.sql" />
     <Build Include="dbo.Hostname.sql" />
   </ItemGroup>
   <ItemGroup>

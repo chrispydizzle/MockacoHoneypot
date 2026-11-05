@@ -1,0 +1,9 @@
+{
+  "request": {"method": "POST", "route": "/wp-login.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Server": "nginx/1.24.0", "X-Powered-By": "PHP/8.2.18"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en-US\"><head><meta charset=\"UTF-8\"><title>Log In &lsaquo; Northstar &#8212; WordPress</title></head><body class=\"login\"><div id=\"login\"><h1>Northstar</h1><div id=\"login_error\"><strong>Error:</strong> Invalid username or password.</div><form name=\"loginform\" id=\"loginform\" action=\"/wp-login.php\" method=\"post\"><label for=\"user_login\">Username or Email Address</label><input name=\"log\" id=\"user_login\"><label for=\"user_pass\">Password</label><input type=\"password\" name=\"pwd\" id=\"user_pass\"><input type=\"submit\" name=\"wp-submit\" id=\"wp-submit\" value=\"Log In\"></form></div></body></html>\n"
+  }
+}

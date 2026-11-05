@@ -1,39 +1,37 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
+using System;
 using System.Threading.Tasks;
 
-namespace Mockaco {
-    public class Program {
-        public static async Task Main(string[] args) {
-            var host = CreateHostBuilder(args).Build();
-
-            using (var scope = host.Services.CreateScope()) {
-                var mockProvider = scope.ServiceProvider.GetService<IMockProvider>();
-
-                await mockProvider.WarmUp();
-            }
-
+namespace Mockaco
+{
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            using var host = CreateHostBuilder(args).Build();
             await host.RunAsync();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder => {
-                    webBuilder.ConfigureAppConfiguration((_, configuration) => {
-                        var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                        configuration.SetBasePath(Path.Combine(assemblyLocation, "Settings"));
-
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.ConfigureAppConfiguration((context, configuration) =>
+                    {
+                        var settings = Path.Combine(AppContext.BaseDirectory, "Settings");
                         var switchMappings = new Dictionary<string, string>() {
-                            {"--path", "Mockaco:TemplateFileProvider:Path" },
-                            {"--logs", "Serilog:WriteTo:0:Args:path" }
+                            {"--path", "Honeypot:ProfilesPath" },
+                            {"--logs", "Serilog:WriteTo:0:Args:path" },
+                            {"--dryrun", "Honeypot:DisableRequestLogging" }
                         };
-
+                        configuration.AddJsonFile(Path.Combine(settings, "appsettings.json"), optional: false)
+                            .AddJsonFile(Path.Combine(settings, $"appsettings.{context.HostingEnvironment.EnvironmentName}.json"), optional: true)
+                            .AddEnvironmentVariables();
                         configuration.AddCommandLine(args, switchMappings);
                     })
                     .UseStartup<Startup>();

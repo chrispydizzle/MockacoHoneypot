@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/xmlrpc.php"},
+  "response": {
+    "status": 405,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Allow": "POST", "Server": "nginx/1.24.0", "X-Powered-By": "PHP/8.2.18"},
+    "bodyFormat": "text",
+    "body": "XML-RPC server accepts POST requests only.\n"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "request": { "method": "POST", "route": "/json_rpc" },
+  "response": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": [
+        { "$generator": "SQLInjection", "count": 8 },
+        { "$generator": "QuotationMarks", "count": 8 },
+        { "$generator": "RightToLeftStrings", "count": 8 },
+        { "$generator": "TrickUnicode", "count": 8 }
+      ]
+    }
+  }
+}

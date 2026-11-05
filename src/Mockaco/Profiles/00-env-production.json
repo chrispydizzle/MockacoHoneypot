@@ -1,0 +1,12 @@
+{
+  "request": {
+    "methods": ["GET", "HEAD"],
+    "routes": ["/.env", "/.env.prod", "/.env.production", "/.env.production.local", "/.env.live", "/.env.secret", "/.env.config", "/.env.bak", "/.env.backup", "/.env.save", "/.env.old", "/.env.orig", "/.env.copy", "/.env.prev", "/.env.saved", "/.env~", "/.env.bak~", "/.env.old~", "/.env.save~", "/.env.txt", "/.env_backup", "/.env_old", "/env", "/{directory}/.env"]
+  },
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "APP_NAME=\"Northstar Portal\"\nAPP_ENV=production\nAPP_KEY=base64:qCbncV2Qwks/5gl0odW8gknnIGOg9L2RV9wIPmKU8as=\nAPP_DEBUG=false\nAPP_URL=http://portal.internal\nLOG_CHANNEL=stack\nLOG_LEVEL=warning\nDB_CONNECTION=mysql\nDB_HOST=mysql\nDB_PORT=3306\nDB_DATABASE=portal\nDB_USERNAME=portal\nDB_PASSWORD=R8f2pX6qK4m7T9vN\nCACHE_DRIVER=redis\nSESSION_DRIVER=redis\nQUEUE_CONNECTION=redis\nREDIS_HOST=redis\nREDIS_PORT=6379\nMAIL_MAILER=smtp\nMAIL_HOST=mail.internal\nMAIL_PORT=587\nMAIL_USERNAME=notifications\nMAIL_PASSWORD=H6qP3vR8mT2xN7kW\nMAIL_FROM_ADDRESS=notifications@portal.internal\nAWS_ACCESS_KEY_ID=AKIA4N7Q2M6P3R5T7V2X\nAWS_SECRET_ACCESS_KEY=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\nAWS_DEFAULT_REGION=us-east-1\nAWS_BUCKET=northstar-portal-assets\n"
+  }
+}

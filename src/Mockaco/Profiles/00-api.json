@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/api.php"},
+  "response": {
+    "status": 401,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": {"error": "Unauthenticated"}
+  }
+}

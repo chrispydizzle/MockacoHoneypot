@@ -1,0 +1,9 @@
+{
+  "request": {"method": "POST", "routes": ["/login", "/boaform/admin/formLogin", "/user_Login_index.html", "/index/user/login.html", "/admin/auth/login", "/admin/login/index", "/Main_Login.asp"]},
+  "response": {
+    "status": 401,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Sign in - Northstar Portal</title></head><body><main><h1>Sign in</h1><p role=\"alert\">Invalid username or password.</p><form action=\"/login\" method=\"post\"><label>Username <input name=\"username\" autocomplete=\"username\"></label><label>Password <input type=\"password\" name=\"password\" autocomplete=\"current-password\"></label><button type=\"submit\">Sign in</button></form></main></body></html>\n"
+  }
+}
