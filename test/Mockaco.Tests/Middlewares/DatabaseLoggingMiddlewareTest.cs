@@ -34,7 +34,76 @@ namespace Mockaco.Tests.Middlewares
             await middleware.InvokeAsync(context);
 
             Assert.True(responded);
-            Assert.Equal(new CapturedRequest("192.0.2.10", "example.test:8080", "/Case/Path", "POST", "?token=a%26b"), log.Request);
+            Assert.Equal("192.0.2.10", log.Request.SourceAddress);
+            Assert.Equal("example.test:8080", log.Request.TargetHost);
+            Assert.Equal("/Case/Path", log.Request.Target);
+            Assert.Equal("POST", log.Request.Method);
+            Assert.Equal("?token=a%26b", log.Request.QueryString);
+            Assert.NotNull(log.Request.Body);
+            Assert.Empty(log.Request.Body);
+            Assert.Null(log.Request.ContentType);
+        }
+
+        [Theory]
+        [InlineData(true, "POST", "application/octet-stream")]
+        [InlineData(false, "GET", null)]
+        public async Task CapturesExactBodyBytesAndLeavesThemReadable(bool seekable, string method, string contentType)
+        {
+            var bytes = new byte[65537];
+            for (var index = 0; index < bytes.Length; index++) bytes[index] = (byte)index;
+            using var input = seekable ? new MemoryStream(bytes) : new NonSeekableStream(bytes);
+            var context = new DefaultHttpContext();
+            context.Request.Method = method;
+            context.Request.ContentType = contentType;
+            context.Request.Body = input;
+            var log = new RecordingLog();
+            var responded = false;
+            var middleware = new DatabaseLoggingMiddleware(async nextContext =>
+            {
+                Assert.Equal(bytes, log.Request.Body);
+                Assert.Equal(contentType, log.Request.ContentType);
+                using var downstream = new MemoryStream();
+                await nextContext.Request.Body.CopyToAsync(downstream);
+                Assert.Equal(bytes, downstream.ToArray());
+                responded = true;
+            }, log, NullLogger<DatabaseLoggingMiddleware>.Instance);
+
+            try
+            {
+                await middleware.InvokeAsync(context);
+                Assert.True(responded);
+                Assert.True(context.Request.Body.CanRead);
+            }
+            finally
+            {
+                await context.Request.Body.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task AnIncompleteBodyIsNotRecordedOrHandledAsACompleteRequest()
+        {
+            using var input = new NonSeekableStream(new byte[] { 1, 2, 3 }) { FailRead = true };
+            var context = new DefaultHttpContext();
+            context.Request.Body = input;
+            var log = new RecordingLog();
+            var responded = false;
+            var middleware = new DatabaseLoggingMiddleware(_ =>
+            {
+                responded = true;
+                return Task.CompletedTask;
+            }, log, NullLogger<DatabaseLoggingMiddleware>.Instance);
+
+            try
+            {
+                await Assert.ThrowsAsync<IOException>(() => middleware.InvokeAsync(context));
+                Assert.Null(log.Request);
+                Assert.False(responded);
+            }
+            finally
+            {
+                await context.Request.Body.DisposeAsync();
+            }
         }
 
         [Fact]
@@ -65,6 +134,24 @@ namespace Mockaco.Tests.Middlewares
                 if (Failure != null) throw Failure;
                 Request = request;
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class NonSeekableStream : MemoryStream
+        {
+            public NonSeekableStream(byte[] bytes) : base(bytes) { }
+            public bool FailRead { get; init; }
+            public override bool CanSeek => false;
+            public override long Position
+            {
+                get => throw new NotSupportedException();
+                set => throw new NotSupportedException();
+            }
+            public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+            public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+            {
+                if (FailRead) throw new IOException("Incomplete request body");
+                return base.ReadAsync(buffer, cancellationToken);
             }
         }
     }

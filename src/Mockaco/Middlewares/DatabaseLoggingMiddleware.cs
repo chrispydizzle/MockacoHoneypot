@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Mockaco.Capture;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Mockaco.Middlewares
@@ -21,12 +22,29 @@ namespace Mockaco.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
+            context.Request.EnableBuffering();
+            byte[] body;
+            using (var buffer = new MemoryStream())
+            {
+                var position = context.Request.Body.Position;
+                try
+                {
+                    await context.Request.Body.CopyToAsync(buffer, context.RequestAborted);
+                    body = buffer.ToArray();
+                }
+                finally
+                {
+                    context.Request.Body.Position = position;
+                }
+            }
+
             try
             {
                 await _log.WriteAsync(new CapturedRequest(
                     context.Connection.RemoteIpAddress?.ToString() ?? "(unknown)",
                     context.Request.Host.ToString(), context.Request.Path.ToString(),
-                    context.Request.Method, context.Request.QueryString.ToString()), context.RequestAborted);
+                    context.Request.Method, context.Request.QueryString.ToString(), body,
+                    context.Request.ContentType), context.RequestAborted);
             }
             catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested) { throw; }
             catch (Exception exception)

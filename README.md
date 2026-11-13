@@ -148,7 +148,7 @@ database, using a fictional Northstar Portal installation:
 These are bounded static decoys, not running WordPress, Tomcat, Jenkins, PHP,
 or GeoServer installations. POST login/XML-RPC/metadata-uploader responses do not
 parse submissions or implement those protocols. The metadata-uploader profile
-never saves or executes uploads. Request-body logging remains unchanged.
+never executes uploads; submissions are retained only as raw request-body bytes.
 All apparent passwords, keys, hostnames, and configuration data in these profiles
 are invented fixtures; they are not taken from local files, environment variables,
 or real accounts. Keep the fixture values consistent when customizing the persona.
@@ -174,11 +174,30 @@ or included in published builds. They must be translated to this profile format;
 this is deliberately not a replacement implementation of the Mockaco language.
 
 Capture writes the source address, target host, case-preserving path, method,
-query string, and database-default timestamp before responding. It does not parse
-or store bodies or headers, matching the existing SQL capture scope. Concurrent
+query string, raw body bytes, content type, and database-default timestamp before
+responding. Bodies are stored losslessly in `dbo.Request.Body` (`VARBINARY(MAX)`),
+including malformed JSON, form submissions, binary uploads, and chunked requests.
+`ContentType` retains the media type and charset when supplied; other headers are
+not stored. Bodyless requests use an empty byte array; historical `NULL` bodies
+remain unknown and cannot be recovered. The stream is rewound for response
+handlers, and no parsing, decoding, redaction, or truncation is performed.
+Existing HTTP server request-size limits still apply. Concurrent
 first requests share one source record. A failed database write returns 503
 rather than the old middleware's misleading empty 200. The retired
 `/_mockaco/verification` path is now an ordinary captured, unmatched request.
+
+Before running the updated collector against an existing database, apply the
+rerunnable body migration and restart the collector:
+
+```powershell
+sqlcmd -S localhost -E -d HttpDb -b -i .\HttpLog\Migrations\003-RequestBodies.sql
+```
+
+This widens binary body columns and adds `ContentType`, preserving existing
+records. Existing `NVARCHAR`/`NCHAR` body columns are explicitly converted through
+a replacement column inside a transaction; their stored text is preserved as
+UTF-16LE bytes, not reconstructed original wire bytes. Failures roll back the
+migration. Fresh deployments of `HttpLog.sqlproj` include both changes.
 
 ## Build and publish
 
@@ -199,18 +218,24 @@ To check a published collector against a disposable SQL database:
 
 ```powershell
 dotnet run --project .\tools\CollectorChecks -c Release -- --app .\artifacts\collector-publish\Mockaco.dll
+dotnet run --project .\tools\CollectorChecks -c Release -- --app .\artifacts\collector-publish\Mockaco.dll --legacy-schema
 ```
 
 This starts its own collector on an ephemeral loopback port, sends concurrent
 requests, checks the original profiles plus every case in
 `test\Mockaco.Tests\Responses\DecoyRequests.json` (including HEAD parity, native
-content types, and binary/XML/JSON bodies), checks capture failure handling, and
+content types, and binary/XML/JSON bodies), verifies exact request-body bytes and
+content types in SQL, checks capture failure handling, and
 reads the resulting records through the analytics store. It creates no scan job
 definitions and never uses the live `HttpDb`. The SQL account needs create/drop
 database permission; `--sql` overrides the master connection. The owned process
 and temporary database are removed on completion. Representative received
 dotenv, Compose, Git, and icon bodies are retained under the ignored
 `artifacts\collector-responses` directory.
+`--legacy-schema` first recreates both binary and Unicode-text body schemas in
+that disposable database, applies migration 003 twice to each, and verifies
+historical records survive (including long text, Unicode, and NULL values) before
+running the same capture checks.
 
 ## Recon worker and concurrency
 

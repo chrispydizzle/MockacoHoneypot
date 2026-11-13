@@ -27,8 +27,8 @@ BEGIN
     INSERT dbo.Host (IpAddress) VALUES (@SourceAddress);
     SET @SourceHostId = SCOPE_IDENTITY();
 END;
-INSERT dbo.Request (SourceHostId, TargetHost, Target, Method, QueryString)
-VALUES (@SourceHostId, @TargetHost, @Target, @Method, @QueryString);";
+INSERT dbo.Request (SourceHostId, TargetHost, Target, Method, QueryString, Body, ContentType)
+VALUES (@SourceHostId, @TargetHost, @Target, @Method, @QueryString, @Body, @ContentType);";
             await connection.ExecuteAsync(new CommandDefinition(sql, request, transaction,
                 cancellationToken: cancellationToken));
             transaction.Commit();
