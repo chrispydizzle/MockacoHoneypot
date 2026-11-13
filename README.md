@@ -10,6 +10,13 @@ Bogus integration, callbacks, global template state, verification API, or
 XML/form/binary response machinery. The `Mockaco` project paths and executable
 name remain so existing build, launch, and benchmark commands still work.
 
+#### Analysis
+<img width="1742" height="885" alt="image" src="https://github.com/user-attachments/assets/b1094b39-a663-40d2-9695-7ef6dfc3aff0" />
+
+
+<img width="1405" height="757" alt="image" src="https://github.com/user-attachments/assets/7068d40f-563b-45ff-a233-11755902d2a2" />
+
+
 ## Components
 
 | Path | Purpose |
