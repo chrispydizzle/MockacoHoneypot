@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/telescope/requests"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>Laravel Telescope</title></head><body><h1>Laravel Telescope</h1><nav>Requests | Commands | Exceptions | Logs</nav><h2>Requests</h2><table><tr><th>Method</th><th>URI</th><th>Status</th></tr><tr><td>GET</td><td>/</td><td>200</td></tr></table></body></html>\n"
+  }
+}

@@ -1,5 +1,5 @@
 import { showBehavior, invalidateBehavior } from "./app.mjs?v=5";
-import { summarizeEvidence, utcTimestamp, lookupState, latestEvidence } from "./intelligence-model.mjs?v=4";
+import { summarizeEvidence, utcTimestamp, lookupState, latestEvidence, storedEvidence } from "./intelligence-model.mjs?v=5";
 
 const $ = id => document.getElementById(id);
 const number = value => Number(value || 0).toLocaleString();
@@ -514,14 +514,15 @@ function renderTraffic(panel, host) {
 }
 
 function renderRaw(panel, host) {
-    panel.append(note("Complete stored responses, without removing fields. Load a response to inspect every returned field or download the original JSON. Large responses are loaded only when requested."));
-    const jobs = host.detail.jobs.filter(job => job.statusCode && job.retrievedAtUtc);
-    if (!jobs.length) { panel.append(empty("No raw API responses have been stored for this host.")); return; }
+    panel.append(note("Complete stored evidence, without removing fields. Nmap JSON contains the original XML, standard error and exit code; Shodan JSON contains the original API response. Large responses are loaded only when requested."));
+    const jobs = storedEvidence(host.detail.jobs);
+    if (!jobs.length) { panel.append(empty("No raw recon evidence has been stored for this host.")); return; }
     const controls = node("div", "evidence-controls raw-controls");
     const label = node("label", "", "Stored response");
     const picker = node("select");
     for (const job of jobs) {
-        const option = node("option", "", `Job #${job.hostJobId} / HTTP ${job.statusCode} / ${utcTimestamp(job.retrievedAtUtc)}`);
+        const status = job.statusCode ? ` / HTTP ${job.statusCode}` : "";
+        const option = node("option", "", `${job.provider} job #${job.hostJobId}${status} / ${utcTimestamp(job.retrievedAtUtc)}`);
         option.value = job.hostJobId; picker.append(option);
     }
     label.append(picker);

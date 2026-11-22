@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/actuator/gateway/routes"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": [{"route_id": "portal", "route_definition": {"id": "portal", "predicates": [{"name": "Path", "args": {"_genkey_0": "/portal/**"}}], "filters": [], "uri": "http://portal.internal:8080", "order": 0}, "order": 0}]
+  }
+}

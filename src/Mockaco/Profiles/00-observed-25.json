@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/files/"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>Index of /files/</title></head><body><h1>Index of /files/</h1><pre><a href=\"/\">../</a>\n<a href=\"/files/manual.pdf\">manual.pdf</a>    12-Oct-2026 10:00    128K\n<a href=\"/files/backup.zip\">backup.zip</a>    12-Oct-2026 09:00    4M</pre></body></html>\n"
+  }
+}

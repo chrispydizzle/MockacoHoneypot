@@ -48,6 +48,9 @@ try
     var migration = await File.ReadAllTextAsync(Path.Combine(root.FullName, "HttpLog", "Migrations", "002-ShodanLookup.sql"));
     await sql.ExecuteAsync(migration);
     await sql.ExecuteAsync(migration);
+    var nmapMigration = await File.ReadAllTextAsync(Path.Combine(root.FullName, "HttpLog", "Migrations", "004-NmapEvidence.sql"));
+    await sql.ExecuteAsync(nmapMigration);
+    await sql.ExecuteAsync(nmapMigration);
     Require(await sql.ExecuteScalarAsync<string>("SELECT Provider FROM dbo.Job") == "Nmap", "Legacy job provider not backfilled.");
     Require(await sql.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM dbo.HostJob") == 1, "Migration changed legacy work.");
 
@@ -98,8 +101,45 @@ try
         Require(await sql.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM dbo.ReconEvidence") == 0, "Evidence survived rollback.");
         Require(await sql.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM dbo.Hostname") == 0, "Hostname survived rollback.");
     }
+    var nmapXml = """
+        <nmaprun><host><status state="up"/><ports>
+        <port protocol="tcp" portid="22"><state state="open"/><service name="ssh" product="OpenSSH"/>
+        <script id="fixture" output="retained"><table key="nested"><elem key="path">/admin/?a=1&amp;b=2</elem></table></script>
+        </port></ports><hostscript><script id="fixture-host" output="host data"/></hostscript>
+        <os><osmatch name="Fixture OS" accuracy="98"/></os></host>
+        <runstats><finished exit="success"/></runstats></nmaprun>
+        """ + new string(' ', 10000);
+    var nmapScan = NmapScanner.Parse(nmapXml, "fixture stderr \u96ea");
+    var partial = new ReconEvidence(null, DateTime.UtcNow,
+        JsonSerializer.Serialize(new NmapOutput("<nmaprun>partial", "cancelled \u96ea", -1)));
+    var nmapOld = nmapClaims[0];
+    await nmap.FailAsync(nmapOld, "cancelled", true, token, partial);
+    Require(await sql.ExecuteScalarAsync<string>("SELECT ResponseJson FROM dbo.ReconEvidence WHERE HostJobId=@HostJobId", nmapOld)
+        == partial.ResponseJson, "Cancelled scan lost its partial output.");
+    var nmapReclaimed = await nmap.ClaimAsync(token);
+    Require(nmapReclaimed.HostJobId == nmapOld.HostJobId, "Cancelled scan was not reclaimable.");
+    await nmap.FailAsync(nmapOld, "stale", false, token, nmapScan.Evidence);
+    Require(await sql.ExecuteScalarAsync<string>("SELECT ResponseJson FROM dbo.ReconEvidence WHERE HostJobId=@HostJobId", nmapOld)
+        == partial.ResponseJson, "Stale failure overwrote evidence.");
+    try
+    {
+        await nmap.CompleteAsync(nmapReclaimed, nmapScan with { Hostnames = new[] { new string('x', 501) } }, token);
+        throw new Exception("Expected Nmap persistence rollback did not occur.");
+    }
+    catch (SqlException)
+    {
+        Require(await sql.ExecuteScalarAsync<string>("SELECT ResponseJson FROM dbo.ReconEvidence WHERE HostJobId=@HostJobId", nmapOld)
+            == partial.ResponseJson, "Failed completion replaced previous partial evidence.");
+    }
+    nmapClaims[0] = nmapReclaimed;
     foreach (var job in nmapClaims)
-        await nmap.CompleteAsync(job, new ReconScan(Array.Empty<string>(), new[] { new ReconPort(22, "tcp", "ssh OpenSSH") }), token);
+    {
+        await nmap.CompleteAsync(job, nmapScan, token);
+        var stored = await sql.ExecuteScalarAsync<string>(
+            "SELECT ResponseJson FROM dbo.ReconEvidence WHERE HostJobId=@HostJobId AND StatusCode IS NULL", job);
+        Require(stored == nmapScan.Evidence.ResponseJson, "Nmap evidence was altered, truncated, or given an HTTP status.");
+        Require(JsonSerializer.Deserialize<NmapOutput>(stored).Xml == nmapXml, "Nmap XML did not round-trip losslessly.");
+    }
     foreach (var job in shodanClaims)
     {
         var scan = await scanner.ScanAsync(job.Target, token);
@@ -111,6 +151,7 @@ try
     }
     Require(await nmap.ClaimAsync(token) == null && await shodan.ClaimAsync(token) == null, "Completed jobs were repeated.");
     await sql.ExecuteAsync(migration);
+    await sql.ExecuteAsync(nmapMigration);
 
     using var analytics = new AnalyticsStore(new ConfigurationBuilder().AddInMemoryCollection(
         new Dictionary<string, string> { ["ConnectionStrings:HttpDb"] = connectionString }).Build());
@@ -120,6 +161,9 @@ try
         Require(detail.Jobs.Count == 2 && detail.Jobs.Select(j => j.Provider).Distinct().Count() == 2,
             "Atlas omitted provider provenance.");
         var state = detail.Jobs.Single(j => j.Provider == "Shodan");
+        var nmapState = detail.Jobs.Single(j => j.Provider == "Nmap");
+        Require(nmapState.StatusCode == null && nmapState.RetrievedAtUtc.HasValue,
+            "Atlas omitted Nmap evidence or confused its exit code with an HTTP status.");
         Require(state.RetrievedAtUtc.HasValue && state.RetrievedAtUtc.Value.Offset == TimeSpan.Zero,
             "Retrieval timestamp did not survive as UTC.");
         if (job.Target == "192.0.2.2")
@@ -143,6 +187,9 @@ try
         """);
     var intelligence = new IntelligenceStore(new ConfigurationBuilder().AddInMemoryCollection(
         new Dictionary<string, string> { ["ConnectionStrings:HttpDb"] = connectionString }).Build());
+    var nmapEvidenceJob = nmapClaims[0];
+    Require(await intelligence.EvidenceAsync(nmapEvidenceJob.HostId, nmapEvidenceJob.HostJobId, token)
+        == nmapScan.Evidence.ResponseJson, "Nmap evidence was not available through the scoped evidence store.");
     var inventory = await intelligence.CollectionAsync(null, "all", "requests", 0, token);
     Require(inventory.Total == 4 && inventory.Hosts.Count == 4, "Inventory omitted hosts without HTTP requests.");
     Require(inventory.Summary.TotalRequests == 1 && inventory.Summary.ShodanAvailable == 2

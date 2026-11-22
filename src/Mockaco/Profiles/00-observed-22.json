@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/echo.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "PHP 8.2.24\nService: portal\nStatus: ready\n"
+  }
+}

@@ -131,6 +131,10 @@ response across explicit aliases. For example:
 HEAD must be listed to match a profile. Its status and representation headers
 match GET, including the byte `Content-Length`, but no body is sent.
 
+Use `request.literalPath` instead of `route`/`routes` for exact paths that are
+not valid route templates, such as `/http://example.internal/login`. It matches
+case-insensitively without normalizing repeated slashes or matching descendants.
+
 ### Observed-request decoys
 
 The `00-*.json` files take precedence over the generic GET fallback. They cover
@@ -151,6 +155,8 @@ database, using a fictional Northstar Portal installation:
 | Tomcat manager, `/hudson`, `/geoserver/web/` | Basic-auth challenge, Jenkins-style denial, and GeoServer-style landing page |
 | `/developmentserver/metadatauploader` | SAP-style `FAILED` / `Cause` text for GET/HEAD/POST; a synthetic error stub, not an upload service |
 | `/actuator/health`, `/version`, `/api.php` | JSON health/version and unauthenticated API responses |
+| `/SDK/webLanguage` | Hikvision-style language XML for GET/HEAD and a static PUT acknowledgement |
+| `00-observed-01.json` through `00-observed-50.json` | 50 SQL-ranked previously uncovered paths: device CGI/HNAP, Autodiscover, phpMyAdmin, diagnostics, directory listings, discovery APIs, and scanner probes |
 
 These are bounded static decoys, not running WordPress, Tomcat, Jenkins, PHP,
 or GeoServer installations. POST login/XML-RPC/metadata-uploader responses do not
@@ -173,6 +179,22 @@ The JSON reports all-time frequency, distinct known source counts, and the last
 deduplicated. The query changes no application data; its intermediate table is
 session-local. Source counts are all-time, including on the recent list.
 Use both frequency and source breadth: one repeat source can dominate raw counts.
+
+To rank only paths without a specific response, use the actual profile matcher
+and a SQL anti-join rather than treating generic GET/OPTIONS fallbacks as decoys:
+
+```powershell
+dotnet run --project .\tools\DecoyInventory -c Release --artifacts-path .\artifacts\decoy-build -- .\src\Mockaco\Profiles .\artifacts\uncovered-request-paths.json 50 /SDK/webLanguage
+```
+
+`tools\UncoveredRequestPaths.sql` ranks all-time request counts across methods,
+with source counts, recent counts, timestamps, and the observed method breakdown.
+The tool excludes paths handled by a specific profile for an observed method or
+GET/HEAD, including parameterized routes and case-insensitive matching. The last
+argument reserves the explicitly requested SDK path separately from the top 50.
+Only temporary SQL tables are written. The November 2026 expansion includes
+observed POST, PUT, and LINK methods as well as GET/HEAD; submissions remain
+uninterpreted and never change the static decoy responses.
 
 The old templates interpolated enumerable type names and discarded some generator
 results. These profiles emit actual sample arrays inside the same
@@ -252,15 +274,42 @@ rerunnable migration (stop old server instances first):
 ```powershell
 sqlcmd -S localhost -E -d HttpDb -b -i .\HttpLog\Migrations\001-ReconLeases.sql
 sqlcmd -S localhost -E -d HttpDb -b -i .\HttpLog\Migrations\002-ShodanLookup.sql
+sqlcmd -S localhost -E -d HttpDb -b -i .\HttpLog\Migrations\004-NmapEvidence.sql
 ```
 
 Fresh deployments of `HttpLog.sqlproj` already include these columns.
 Configure `Recon` in `src\Mockaco\Settings\appsettings.json`, or use environment
 variables such as `$env:Recon__Workers = '16'`. Workers default to eight; there is no
 hard-coded concurrency ceiling. Each worker owns one asynchronous Nmap process.
-The default profile remains 5,000 TCP ports, `-Pn -sV --version-all -O`, with a
+The default profile scans 5,000 TCP ports with `-Pn -sV --version-all -O` and
+`--script default,http-enum,http-headers`, with a
 10-minute Nmap host timeout and an 11-minute process deadline. `Recon:Ports`
 optionally replaces `TopPorts` with an explicit Nmap port list.
+
+`Recon:Scripts` configures the NSE script expression. The default adds standard
+service scripts, HTTP endpoint enumeration, and HTTP headers (including HTTPS
+when Nmap identifies it). Set it to an empty string to disable explicitly
+selected scripts and retain the previous service-detection profile. Scripts send
+additional probes to scanned hosts and remain subject to the existing deadlines.
+HTTP results depend on the target and scripts; this is not an exhaustive crawler.
+
+Nmap now saves its **complete XML**, standard error, exit code, and UTC collection
+time in `dbo.ReconEvidence`, linked to the host's `HostJobId`. `ResponseJson`
+contains a JSON envelope with `Xml`, `StandardError`, and `ExitCode`; `StatusCode`
+is NULL because a process exit code is not an HTTP response status. The XML is
+retained without reformatting or truncation, including port/host/pre/post NSE
+output, nested script tables, HTTP paths/titles/headers, service/CPE data, OS
+matches, non-open port states, timing, and any other fields Nmap returns.
+Hostnames and open-port summaries still populate the existing discovery tables.
+Failed, malformed, timed-out, and cancelled process runs retain available partial
+output as evidence alongside their job error; they are not marked successful.
+Evidence and job state commit together, with lease fencing. A retried job
+replaces that job's previous partial evidence with the latest attempt.
+
+The atlas **Raw evidence** tab can view/download both Nmap envelopes and Shodan
+responses. Apply migration 004 and restart the collector before collecting new
+evidence. Historical Nmap XML was discarded and cannot be recovered; completed
+jobs are not automatically rescanned by this change.
 
 ### Shodan host lookups
 
@@ -334,7 +383,8 @@ UPDATE dbo.HostJob SET State = 0, LastError = NULL WHERE HostJobId = <id> AND St
 ```
 
 Results and completion are committed together; stale owners cannot publish results.
-Only ports reported as `open` are saved. Nmap must be on PATH; OS detection
+Only ports reported as `open` become structured discoveries; other states remain
+in the raw XML evidence. Nmap must be on PATH; OS detection
 requires the usual Nmap/Npcap privileges on Windows. The SaltwaterTaffy dependency
 is no longer needed.
 
@@ -342,9 +392,12 @@ is no longer needed.
 
 ```powershell
 dotnet run --project .\tools\ReconBenchmark -c Release -- --repetitions 2 --targets 16
+dotnet run --project .\tools\ReconBenchmark -c Release -- --verify-only --targets 1
 ```
 
 This exercises the real worker, SQL claim/result path, and Nmap at 2/4/8/16 workers.
+`--verify-only` skips the throughput runs but checks actual HTTP title/header and
+`/admin/` endpoint results in persisted XML, plus process failure/cancellation.
 It creates and removes its own uniquely named SQL database and loopback HTTP
 listeners; it never reads visitor targets from `HttpDb`. It checks concurrent
 claims, stale-lease fencing, migration repeatability, cancellation, failures,

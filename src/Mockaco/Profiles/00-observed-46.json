@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/general/"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>Office Automation Login</title></head><body><h1>Office Automation</h1><form action=\"/login\" method=\"post\"><input name=\"USER_ID\"><input name=\"PASSWORD\" type=\"password\"><button>Login</button></form></body></html>\n"
+  }
+}

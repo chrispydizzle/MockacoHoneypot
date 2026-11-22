@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/humans.txt"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "/* TEAM */\nTeam: Northstar Portal Engineering\n/* SITE */\nLanguage: English\nStandards: HTML5, CSS3\nComponents: nginx, PHP, MySQL\n"
+  }
+}

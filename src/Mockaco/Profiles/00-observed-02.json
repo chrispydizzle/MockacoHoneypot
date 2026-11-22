@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/details/86d34000-61da-11ed-a2f0-0242ac1c000b"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>Service details - Northstar Portal</title></head><body><h1>Service details</h1><dl><dt>Identifier</dt><dd>86d34000-61da-11ed-a2f0-0242ac1c000b</dd><dt>Status</dt><dd>Available</dd></dl><a href=\"/login\">Sign in to manage this service</a></body></html>\n"
+  }
+}

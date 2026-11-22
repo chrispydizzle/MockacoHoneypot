@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/style.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/css; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "body { font-family: Arial, sans-serif; color: #222; background: #f5f5f5; }\na { color: #245b85; }\n"
+  }
+}

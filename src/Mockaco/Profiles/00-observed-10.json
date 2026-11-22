@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/config/getuser"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": {"result": 0, "users": [{"name": "admin", "role": "administrator", "enabled": true}, {"name": "operator", "role": "viewer", "enabled": true}]}
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "literalPath": "/http://lspuser.jujiapay.com/user_Login_index.html"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>User Login</title></head><body><h1>User Login</h1><form action=\"/login\" method=\"post\"><input name=\"username\" autocomplete=\"username\"><input name=\"password\" type=\"password\" autocomplete=\"current-password\"><button>Sign in</button></form></body></html>\n"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/setup/eureka_info"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": {"name": "Living Room", "device_info": {"manufacturer": "Google Inc.", "model_name": "Chromecast", "product_name": "eureka"}, "version": 12, "build_version": "1.56.275994", "setup_state": 60, "net": {"ip_address": "192.168.1.24"}}
+  }
+}

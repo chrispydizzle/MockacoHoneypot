@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { summarizeEvidence, utcTimestamp, lookupState, latestEvidence } from "../../src/Mockaco.Analytics/wwwroot/intelligence-model.mjs";
+import { summarizeEvidence, utcTimestamp, lookupState, latestEvidence, storedEvidence } from "../../src/Mockaco.Analytics/wwwroot/intelligence-model.mjs";
 
 test("CVE evidence merges host and service records without losing false verification or zero scores", () => {
     const result = summarizeEvidence({
@@ -57,4 +57,12 @@ test("latest evidence uses retrieval order rather than assuming job IDs are chro
     const recent = { hostJobId: 10, provider: "Shodan", statusCode: 404, retrievedAtUtc: "2026-01-01T00:00:00Z" };
     assert.equal(latestEvidence([old, recent, { hostJobId: 99, provider: "Nmap" }]), recent);
     assert.equal(latestEvidence([]), null);
+});
+
+test("raw evidence includes Nmap without an HTTP status and failed partial scans", () => {
+    const nmap = { hostJobId: 1, provider: "Nmap", statusCode: null, retrievedAtUtc: "2026-01-01T00:00:00Z", state: 3 };
+    const shodan = { hostJobId: 2, provider: "Shodan", statusCode: 404, retrievedAtUtc: "2026-01-02T00:00:00Z" };
+    const legacy = { hostJobId: 3, provider: "Nmap", state: 1 };
+    assert.deepEqual(storedEvidence([nmap, shodan, legacy]), [nmap, shodan]);
+    assert.equal(latestEvidence([nmap, shodan]), shodan);
 });

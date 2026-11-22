@@ -209,6 +209,51 @@ namespace Mockaco.Tests.Responses
         }
 
         [Fact]
+        public void MatchesLiteralPathsWithoutParsingOrBroadeningTheirBoundaries()
+        {
+            var profiles = ResponseProfiles.Parse(new[] {
+                """{"request":{"methods":["GET","HEAD"],"literalPath":"/http://example.internal/login"},"response":{"body":"login"}}"""
+            });
+            Assert.NotNull(profiles.Match(Context("GET", "/http://example.internal/login").Request));
+            Assert.NotNull(profiles.Match(Context("HEAD", "/HTTP://EXAMPLE.INTERNAL/LOGIN").Request));
+            Assert.Null(profiles.Match(Context("POST", "/http://example.internal/login").Request));
+            Assert.Null(profiles.Match(Context("GET", "/http:/example.internal/login").Request));
+            Assert.Null(profiles.Match(Context("GET", "/http://example.internal/login/extra").Request));
+        }
+
+        [Theory]
+        [InlineData("""{"method":"GET","literalPath":"login"}""")]
+        [InlineData("""{"method":"GET","literalPath":"/login","route":"/login"}""")]
+        [InlineData("""{"method":"GET","literalPath":"/login","routes":["/login"]}""")]
+        public void RejectsInvalidOrAmbiguousLiteralPathsAtStartup(string request)
+        {
+            var json = """{"request":""" + request + ""","response":{}}""";
+            Assert.Throws<InvalidDataException>(() => ResponseProfiles.Parse(new[] { json }));
+        }
+
+        [Fact]
+        public async Task KeepsSdkLanguageUpdatesStaticAndLeavesSubmissionsUntouched()
+        {
+            var responder = Responder();
+            var put = Context("PUT", "/SDK/webLanguage");
+            put.Request.ContentType = "application/xml";
+            var submission = Encoding.UTF8.GetBytes("<webLanguage><language>fr</language></webLanguage>");
+            put.Request.Body = new MemoryStream(submission);
+            await responder.InvokeAsync(put);
+            Assert.Equal(200, put.Response.StatusCode);
+            Assert.Contains("<statusString>OK</statusString>", Text(put));
+            Assert.Equal(0, put.Request.Body.Position);
+            Assert.Equal(submission, ((MemoryStream)put.Request.Body).ToArray());
+            var get = Context("GET", "/SDK/webLanguage");
+            await responder.InvokeAsync(get);
+            Assert.Contains("<language>en</language>", Text(get));
+            Assert.DoesNotContain("<language>fr</language>", Text(get));
+            var unmatched = Context("PUT", "/SDK/webLanguage/extra");
+            await responder.InvokeAsync(unmatched);
+            Assert.Equal(501, unmatched.Response.StatusCode);
+        }
+
+        [Fact]
         public async Task KeepsDecoyConfigurationValuesConsistentAcrossFormats()
         {
             async Task<string> Get(string path)
@@ -232,6 +277,11 @@ namespace Mockaco.Tests.Responses
             Assert.Equal(32, Convert.FromBase64String(env["APP_KEY"].Substring("base64:".Length)).Length);
             Assert.Equal(await Get("/.git/config"), await Get("/assets../.git/config"));
             Assert.Contains("MYSQL_DATABASE: " + env["DB_DATABASE"], await Get("/docker-compose.prod.yml"));
+            var wordpress = await Get("/wp-config.php");
+            Assert.Contains("define('DB_NAME', '" + env["DB_DATABASE"] + "');", wordpress);
+            Assert.Contains("define('DB_USER', '" + env["DB_USERNAME"] + "');", wordpress);
+            Assert.Contains("define('DB_PASSWORD', '" + env["DB_PASSWORD"] + "');", wordpress);
+            Assert.Contains("define('DB_HOST', '" + env["DB_HOST"] + "');", wordpress);
         }
 
         private static string Text(DefaultHttpContext context) =>

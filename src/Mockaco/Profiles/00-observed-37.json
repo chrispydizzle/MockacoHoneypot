@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "routes": ["/nice%20ports,/Trinity.txt.bak", "/nice ports,/Trinity.txt.bak"]},
+  "response": {
+    "status": 404,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><hr><p>nginx/1.24.0</p></body></html>\n"
+  }
+}

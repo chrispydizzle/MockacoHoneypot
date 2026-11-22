@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/geoip/"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": {"ip": "192.0.2.10", "country_code": "US", "country_name": "United States", "city": "Example City", "latitude": 0, "longitude": 0, "time_zone": "America/New_York"}
+  }
+}

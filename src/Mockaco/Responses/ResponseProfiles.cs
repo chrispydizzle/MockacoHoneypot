@@ -40,7 +40,12 @@ namespace Mockaco.Responses
                     ?? throw new InvalidDataException("A response profile cannot be null.");
                 if (profile.Request == null) throw new InvalidDataException("Each profile needs a request.");
                 var methods = Aliases(profile.Request.Method, profile.Request.Methods, "method");
-                var routes = Aliases(profile.Request.Route, profile.Request.Routes, "route");
+                var literalPath = profile.Request.LiteralPath;
+                if (literalPath != null && (profile.Request.Route != null || profile.Request.Routes != null
+                    || !literalPath.StartsWith("/", StringComparison.Ordinal)))
+                    throw new InvalidDataException("literalPath must start with '/' and cannot be combined with route/routes.");
+                var routes = literalPath == null
+                    ? Aliases(profile.Request.Route, profile.Request.Routes, "route") : Array.Empty<string>();
                 if (profile.Response == null) throw new InvalidDataException("Each profile needs a response.");
                 if (profile.Response.Status is { } status && ((int)status < 100 || (int)status > 599))
                     throw new InvalidDataException("Response status must be an HTTP status code.");
@@ -61,6 +66,8 @@ namespace Mockaco.Responses
                         throw new InvalidDataException("Invalid base64 response body.", exception);
                     }
                 }
+                if (literalPath != null)
+                    return methods.Select(method => new CompiledProfile(method, null, literalPath, profile.Response));
                 return routes.SelectMany(route =>
                 {
                     var template = TemplateParser.Parse(route);
@@ -68,7 +75,7 @@ namespace Mockaco.Responses
                     foreach (var parameter in template.Parameters.Where(parameter => parameter.DefaultValue != null))
                         defaults.Add(parameter.Name, parameter.DefaultValue);
                     var matcher = new TemplateMatcher(template, defaults);
-                    return methods.Select(method => new CompiledProfile(method, matcher, profile.Response));
+                    return methods.Select(method => new CompiledProfile(method, matcher, null, profile.Response));
                 });
             }).ToArray();
             return new ResponseProfiles(profiles);
@@ -76,9 +83,11 @@ namespace Mockaco.Responses
 
         public ResponseDefinition Match(HttpRequest request) => _profiles.FirstOrDefault(profile =>
             string.Equals(profile.Method, request.Method, StringComparison.OrdinalIgnoreCase) &&
-            profile.Matcher.TryMatch(request.Path, new RouteValueDictionary()))?.Response;
+            (profile.LiteralPath != null
+                ? string.Equals(profile.LiteralPath, request.Path.Value, StringComparison.OrdinalIgnoreCase)
+                : profile.Matcher.TryMatch(request.Path, new RouteValueDictionary())))?.Response;
 
-        private sealed record CompiledProfile(string Method, TemplateMatcher Matcher, ResponseDefinition Response);
+        private sealed record CompiledProfile(string Method, TemplateMatcher Matcher, string LiteralPath, ResponseDefinition Response);
 
         private static string[] Aliases(string single, string[] multiple, string name)
         {
@@ -102,6 +111,7 @@ namespace Mockaco.Responses
             public string Route { get; set; }
             public string[] Methods { get; set; }
             public string[] Routes { get; set; }
+            public string LiteralPath { get; set; }
         }
 
         public sealed class ResponseDefinition

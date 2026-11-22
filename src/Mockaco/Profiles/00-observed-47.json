@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/mobile/auth_mobi.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": {"status": 0, "message": "Authentication required", "login_url": "/login"}
+  }
+}

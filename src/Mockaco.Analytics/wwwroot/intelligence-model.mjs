@@ -19,6 +19,10 @@ export function latestEvidence(jobs) {
         .sort((a, b) => Date.parse(b.retrievedAtUtc) - Date.parse(a.retrievedAtUtc) || b.hostJobId - a.hostJobId)[0] || null;
 }
 
+export function storedEvidence(jobs) {
+    return jobs.filter(job => job.retrievedAtUtc);
+}
+
 export function summarizeEvidence(raw) {
     const services = Array.isArray(raw?.data) ? raw.data.filter(item => item && typeof item === "object") : [];
     const vulnerabilities = new Map();

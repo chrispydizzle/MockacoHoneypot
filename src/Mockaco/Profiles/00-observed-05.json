@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/.well-known/security.txt"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "Contact: mailto:security@portal.internal\nExpires: 2030-12-31T23:59:59Z\nPreferred-Languages: en\nCanonical: https://portal.internal/.well-known/security.txt\n"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD", "POST"], "route": "/HNAP1/"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/xml; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><GetDeviceSettingsResponse xmlns=\"http://purenetworks.com/HNAP1/\"><GetDeviceSettingsResult>OK</GetDeviceSettingsResult><Type>Gateway</Type><DeviceName>Wireless Router</DeviceName><VendorName>D-Link</VendorName><ModelName>DIR-850L</ModelName><FirmwareVersion>1.21</FirmwareVersion><SOAPActions><string>http://purenetworks.com/HNAP1/GetDeviceSettings</string></SOAPActions></GetDeviceSettingsResponse></soap:Body></soap:Envelope>\n"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/ads.txt"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "# Authorized sellers for Northstar Portal\n# No advertising inventory is offered on this domain.\n"
+  }
+}

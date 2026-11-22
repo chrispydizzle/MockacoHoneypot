@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/appGet.cgi"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": {"result": 0, "device": {"model": "IPC", "firmware": "V5.5.80", "language": "en"}, "loginRequired": true}
+  }
+}

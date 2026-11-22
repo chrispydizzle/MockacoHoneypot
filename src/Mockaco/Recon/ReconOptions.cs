@@ -11,6 +11,7 @@ namespace Mockaco.Recon
         public int ProcessTimeoutSeconds { get; set; } = 660;
         public bool DetectOperatingSystem { get; set; } = true;
         public bool ExhaustiveVersionDetection { get; set; } = true;
+        public string Scripts { get; set; } = "default,http-enum,http-headers";
         public string ConnectionString { get; set; } =
             "Data Source=localhost;Initial Catalog=HttpDb;Integrated Security=True;Connect Timeout=30;TrustServerCertificate=True;";
     }

@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/upl.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>Upload Manager</title></head><body><h1>Upload Manager</h1><form action=\"/upl.php\" method=\"post\" enctype=\"multipart/form-data\"><input name=\"file\" type=\"file\"><button>Upload</button></form></body></html>\n"
+  }
+}

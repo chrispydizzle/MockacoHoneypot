@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/program/index.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>Program Portal</title></head><body><h1>Program Portal</h1><p>Please sign in to view available programs.</p><a href=\"/login\">Sign in</a></body></html>\n"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/client/get_targets"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0"},
+    "body": {"code": 0, "targets": [{"id": "portal", "name": "Northstar Portal", "host": "portal.internal", "status": "online"}]}
+  }
+}

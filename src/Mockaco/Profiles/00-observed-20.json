@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/console/"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>WebLogic Server Administration Console</title></head><body><h1>WebLogic Server Administration Console</h1><form action=\"/console/j_security_check\" method=\"post\"><input name=\"j_username\"><input name=\"j_password\" type=\"password\"><button>Login</button></form></body></html>\n"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/SDK/webLanguage"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "application/xml; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<webLanguage version=\"1.0\" xmlns=\"http://www.hikvision.com/ver10/XMLSchema\"><language>en</language></webLanguage>\n"
+  }
+}

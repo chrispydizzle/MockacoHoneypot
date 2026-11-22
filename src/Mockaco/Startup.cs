@@ -13,6 +13,7 @@ namespace Mockaco
     using Mockaco.Recon;
     using Mockaco.Capture;
     using Mockaco.Responses;
+    using Mockaco.Attack;
 
     public class Startup
     {
@@ -83,11 +84,57 @@ namespace Mockaco
                 return new ShodanWorker(store, provider.GetRequiredService<ShodanScanner>(), options,
                     provider.GetRequiredService<ILogger<ShodanWorker>>());
             });
+
+            // --- Attack layer ---
+            services.AddOptions<AttackOptions>()
+                .Bind(_configuration.GetSection("Attack"))
+                .PostConfigure(options => options.ConnectionString = connectionString ?? options.ConnectionString)
+                .Validate(options => !string.IsNullOrWhiteSpace(options.LlmBaseUrl)
+                    && !string.IsNullOrWhiteSpace(options.LlmModel)
+                    && options.Workers > 0
+                    && options.BatchSize > 0
+                    && options.PollIntervalSeconds > 0
+                    && options.ResearchTimeoutSeconds > 0
+                    && !string.IsNullOrWhiteSpace(options.ConnectionString), "Invalid Attack configuration")
+                .ValidateOnStart();
+            services.AddSingleton<IAttackStore, AttackStore>();
+            services.AddSingleton<AttackClient>();
+            // Register all strategies as singletons so the resolver gets stable instances
+            services.AddSingleton<ExploitStrategy>();
+            services.AddSingleton<ServiceStrategy>();
+            services.AddSingleton<PortStrategy>();
+            services.AddSingleton<CredentialStrategy>();
+            services.AddSingleton<WebStrategy>();
+            services.AddSingleton<LateralMovementStrategy>();
+            services.AddSingleton<ReconStrategy>();
+            // Resolver gets all strategies from DI at construction time
+            services.AddSingleton<AttackStrategyResolver>(provider =>
+            {
+                var strategies = new IAttackStrategy[]
+                {
+                    provider.GetRequiredService<ExploitStrategy>(),
+                    provider.GetRequiredService<ServiceStrategy>(),
+                    provider.GetRequiredService<PortStrategy>(),
+                    provider.GetRequiredService<CredentialStrategy>(),
+                    provider.GetRequiredService<WebStrategy>(),
+                    provider.GetRequiredService<LateralMovementStrategy>(),
+                    provider.GetRequiredService<ReconStrategy>()
+                };
+                return new AttackStrategyResolver(strategies);
+            });
+            // Engine gets resolver from DI
+            // services.AddSingleton<IAttackEngine, AttackEngine>();
+            // services.AddHostedService<AttackWorker>();
         }
 
         public void Configure(IApplicationBuilder app, ProfileResponder responder, ILogger<Startup> logger)
         {
             logger.LogInformation("Honeypot collector [github.com/chrispydizzle/MockacoHoneypot]");
+
+            // Ensure attack-layer tables exist before any background worker queries them
+            var attackConnectionString = _configuration.GetSection("Attack").Get<AttackOptions>()?.ConnectionString
+                ?? _configuration.GetConnectionString("HttpDb");
+            AttackInitializer.EnsureTablesAsync(attackConnectionString, logger).GetAwaiter().GetResult();
 
             if (_configuration.GetValue<bool>("Honeypot:DisableRequestLogging"))
             {

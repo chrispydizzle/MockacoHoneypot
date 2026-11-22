@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD", "PUT"], "route": "/manager/text/deploy"},
+  "response": {
+    "status": 401,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0", "WWW-Authenticate": "Basic realm=\"Tomcat Manager Application\""},
+    "bodyFormat": "text",
+    "body": "FAIL - Authentication required to access the Tomcat Manager Application\n"
+  }
+}

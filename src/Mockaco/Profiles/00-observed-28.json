@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/cgi-bin/authLogin.cgi"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/xml; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<QDocRoot><authPassed><![CDATA[0]]></authPassed><errorValue><![CDATA[-1]]></errorValue><isAdmin><![CDATA[0]]></isAdmin><modelName><![CDATA[TS-451]]></modelName><version><![CDATA[4.3.6]]></version></QDocRoot>\n"
+  }
+}

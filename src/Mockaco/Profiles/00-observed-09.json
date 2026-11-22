@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD", "POST", "PUT"], "route": "/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "PHP Warning: No input supplied in /var/www/portal/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php on line 16\n"
+  }
+}

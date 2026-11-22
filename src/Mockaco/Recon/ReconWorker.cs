@@ -56,7 +56,8 @@ namespace Mockaco.Recon
                         using var cleanup = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                         try
                         {
-                            await _store.FailAsync(job, exception.ToString(), cancelled, cleanup.Token);
+                            await _store.FailAsync(job, exception.ToString(), cancelled, cleanup.Token,
+                                (exception as IReconFailureEvidence)?.Evidence);
                         }
                         catch (Exception failure)
                         {

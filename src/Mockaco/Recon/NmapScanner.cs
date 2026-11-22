@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -36,6 +37,11 @@ namespace Mockaco.Recon
                 start.ArgumentList.Add(argument);
             if (_options.DetectOperatingSystem) start.ArgumentList.Add("-O");
             if (_options.ExhaustiveVersionDetection) start.ArgumentList.Add("--version-all");
+            if (!string.IsNullOrWhiteSpace(_options.Scripts))
+            {
+                start.ArgumentList.Add("--script");
+                start.ArgumentList.Add(_options.Scripts);
+            }
             if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
                 start.ArgumentList.Add("-6");
             start.ArgumentList.Add(address.ToString());
@@ -59,16 +65,30 @@ namespace Mockaco.Recon
                 catch (InvalidOperationException) when (process.HasExited) { }
                 await process.WaitForExitAsync(CancellationToken.None);
                 await Task.WhenAll(output, error);
-                cancellationToken.ThrowIfCancellationRequested();
-                throw new TimeoutException($"Nmap exceeded {_options.ProcessTimeoutSeconds}s for {target}.");
+                var evidence = CreateEvidence(output.Result, error.Result, process.ExitCode);
+                if (cancellationToken.IsCancellationRequested)
+                    throw new ReconScanCanceledException(evidence, cancellationToken);
+                throw new ReconScanTimeoutException($"Nmap exceeded {_options.ProcessTimeoutSeconds}s for {target}.", evidence);
             }
             await Task.WhenAll(output, error);
             if (process.ExitCode != 0)
-                throw new InvalidOperationException($"Nmap exited {process.ExitCode} for {target}: {error.Result}");
-            return Parse(output.Result);
+                throw new ReconScanException($"Nmap exited {process.ExitCode} for {target}: {error.Result}",
+                    CreateEvidence(output.Result, error.Result, process.ExitCode));
+            try
+            {
+                return Parse(output.Result, error.Result, process.ExitCode);
+            }
+            catch (Exception exception) when (exception is XmlException or InvalidOperationException or FormatException or OverflowException)
+            {
+                throw new ReconScanException($"Nmap returned incomplete or invalid output for {target}: {exception.Message}",
+                    CreateEvidence(output.Result, error.Result, process.ExitCode), exception);
+            }
         }
 
-        public static ReconScan Parse(string xml)
+        private static ReconEvidence CreateEvidence(string xml, string error, int exitCode) =>
+            new ReconEvidence(null, DateTime.UtcNow, JsonSerializer.Serialize(new NmapOutput(xml, error, exitCode)));
+
+        public static ReconScan Parse(string xml, string standardError = "", int exitCode = 0)
         {
             using var reader = XmlReader.Create(new StringReader(xml),
                 new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore, XmlResolver = null });
@@ -79,7 +99,7 @@ namespace Mockaco.Recon
             var hosts = document.Root.Elements("host").ToArray();
             if (hosts.Length != 1 || (string)hosts[0].Attribute("timedout") == "true"
                 || (string)hosts[0].Element("status")?.Attribute("state") != "up") 
-                Trace.WriteLine("Nmap did not complete a scan of the requested host within the time limit.");
+                throw new InvalidOperationException("Nmap did not complete a scan of the requested host within the time limit.");
             var host = hosts[0];
             var names = host.Element("hostnames")?.Elements("hostname")
                 .Select(name => (string)name.Attribute("name"))
@@ -93,7 +113,7 @@ namespace Mockaco.Recon
                         .Select(attribute => (string)port.Element("service")?.Attribute(attribute))
                         .Where(value => !string.IsNullOrEmpty(value)))))
                 .ToArray() ?? Array.Empty<ReconPort>();
-            return new ReconScan(names, ports);
+            return new ReconScan(names, ports, CreateEvidence(xml, standardError, exitCode));
         }
     }
 }

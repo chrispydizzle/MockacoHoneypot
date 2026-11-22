@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.Extensions.Options;
 using System;
+using System.Data;
 using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,11 +69,7 @@ WHERE HostJobId = @HostJobId AND State = 2 AND LeaseToken = @LeaseToken
 AND LeaseUntil > SYSUTCDATETIME();", job, transaction, cancellationToken: cancellationToken));
             if (owned != 1) throw new InvalidOperationException($"Recon job {job.HostJobId} lease was lost.");
             if (scan.Evidence != null)
-                await connection.ExecuteAsync(new CommandDefinition(@"
-INSERT dbo.ReconEvidence (HostJobId, StatusCode, RetrievedAtUtc, ResponseJson)
-VALUES (@HostJobId, @StatusCode, @RetrievedAtUtc, @ResponseJson);",
-                    new { job.HostJobId, scan.Evidence.StatusCode, scan.Evidence.RetrievedAtUtc, scan.Evidence.ResponseJson },
-                    transaction, cancellationToken: cancellationToken));
+                await SaveEvidenceAsync(connection, transaction, job, scan.Evidence, cancellationToken);
             foreach (var name in scan.Hostnames)
                 await connection.ExecuteAsync(new CommandDefinition(@"
 INSERT INTO dbo.Hostname (HostId, Hostname)
@@ -91,14 +88,36 @@ UpdatedAt = GETDATE() WHERE HostJobId = @HostJobId;", job, transaction, cancella
             transaction.Commit();
         }
 
-        public async Task FailAsync(ReconJob job, string error, bool cancelled, CancellationToken cancellationToken)
+        private static Task SaveEvidenceAsync(SqlConnection connection, IDbTransaction transaction, ReconJob job,
+            ReconEvidence evidence, CancellationToken cancellationToken) =>
+            connection.ExecuteAsync(new CommandDefinition(@"
+UPDATE dbo.ReconEvidence SET StatusCode = @StatusCode, RetrievedAtUtc = @RetrievedAtUtc, ResponseJson = @ResponseJson
+WHERE HostJobId = @HostJobId;
+IF @@ROWCOUNT = 0
+    INSERT dbo.ReconEvidence (HostJobId, StatusCode, RetrievedAtUtc, ResponseJson)
+    VALUES (@HostJobId, @StatusCode, @RetrievedAtUtc, @ResponseJson);",
+                new { job.HostJobId, evidence.StatusCode, evidence.RetrievedAtUtc, evidence.ResponseJson },
+                transaction, cancellationToken: cancellationToken));
+
+        public async Task FailAsync(ReconJob job, string error, bool cancelled, CancellationToken cancellationToken,
+            ReconEvidence evidence = null)
         {
             using var connection = new SqlConnection(_options.ConnectionString);
+            await connection.OpenAsync(cancellationToken);
+            using var transaction = connection.BeginTransaction();
+            var owned = await connection.ExecuteScalarAsync<int>(new CommandDefinition(@"
+SELECT COUNT(*) FROM dbo.HostJob WITH (UPDLOCK, HOLDLOCK)
+WHERE HostJobId = @HostJobId AND State = 2 AND LeaseToken = @LeaseToken;",
+                job, transaction, cancellationToken: cancellationToken));
+            if (owned != 1) return;
+            if (evidence != null)
+                await SaveEvidenceAsync(connection, transaction, job, evidence, cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(@"
 UPDATE dbo.HostJob SET State = @State, LastError = @Error, LeaseToken = NULL, LeaseUntil = NULL,
 UpdatedAt = GETDATE() WHERE HostJobId = @HostJobId AND State = 2 AND LeaseToken = @LeaseToken;",
                 new { job.HostJobId, job.LeaseToken, State = cancelled ? 0 : 3, Error = error },
-                cancellationToken: cancellationToken));
+                transaction, cancellationToken: cancellationToken));
+            transaction.Commit();
         }
     }
 }

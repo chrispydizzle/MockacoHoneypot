@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/wp-config.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<?php\ndefine('DB_NAME', 'portal');\ndefine('DB_USER', 'portal');\ndefine('DB_PASSWORD', 'R8f2pX6qK4m7T9vN');\ndefine('DB_HOST', 'mysql');\n$table_prefix = 'wp_';\ndefine('WP_DEBUG', false);\nif (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }\nrequire_once ABSPATH . 'wp-settings.php';\n"
+  }
+}

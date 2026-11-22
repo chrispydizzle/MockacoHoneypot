@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/private/api/v1/service/premaster"},
+  "response": {
+    "status": 401,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0", "WWW-Authenticate": "Bearer realm=\"private-api\""},
+    "body": {"code": "UNAUTHORIZED", "message": "A valid access token is required."}
+  }
+}

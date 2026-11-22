@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/setup.cgi"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/plain; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "Firmware=V1.0.0.52\nModel=DGND3700v2\nRegion=NA\nInternetConnectionStatus=Connected\nLoginStatus=0\n"
+  }
+}

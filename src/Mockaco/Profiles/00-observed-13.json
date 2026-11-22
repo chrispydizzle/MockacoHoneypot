@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/passwordrecovered.cgi"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>Password Recovery</title></head><body><h1>Password Recovery</h1><p>Please enter the router serial number to continue.</p><form action=\"/passwordrecovered.cgi\" method=\"post\"><input name=\"serialNumber\"><button>Continue</button></form></body></html>\n"
+  }
+}

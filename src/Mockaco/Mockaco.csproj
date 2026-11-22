@@ -32,4 +32,10 @@
     <Content Update="Profiles\**\*.json;Settings\**\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Attack\AttackSchema.sql">
+      <LogicalName>Mockaco.Attack.AttackSchema.sql</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

@@ -7,7 +7,8 @@ namespace Mockaco.Recon
 {
     public sealed record ReconJob(long HostJobId, long HostId, string Target, Guid LeaseToken);
     public sealed record ReconPort(int Number, string Protocol, string Detail, DateTime? ObservedAtUtc = null);
-    public sealed record ReconEvidence(int StatusCode, DateTime RetrievedAtUtc, string ResponseJson);
+    public sealed record ReconEvidence(int? StatusCode, DateTime RetrievedAtUtc, string ResponseJson);
+    public sealed record NmapOutput(string Xml, string StandardError, int ExitCode);
     public sealed record ReconScan(IReadOnlyList<string> Hostnames, IReadOnlyList<ReconPort> Ports,
         ReconEvidence Evidence = null);
 
@@ -20,6 +21,7 @@ namespace Mockaco.Recon
     {
         Task<ReconJob> ClaimAsync(CancellationToken cancellationToken);
         Task CompleteAsync(ReconJob job, ReconScan scan, CancellationToken cancellationToken);
-        Task FailAsync(ReconJob job, string error, bool cancelled, CancellationToken cancellationToken);
+        Task FailAsync(ReconJob job, string error, bool cancelled, CancellationToken cancellationToken,
+            ReconEvidence evidence = null);
     }
 }

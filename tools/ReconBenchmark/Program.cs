@@ -56,6 +56,9 @@ try
     var migration = await File.ReadAllTextAsync(Path.Combine(root, "HttpLog", "Migrations", "001-ReconLeases.sql"));
     await sql.ExecuteAsync(migration);
     await sql.ExecuteAsync(migration);
+    var evidenceMigration = await File.ReadAllTextAsync(Path.Combine(root, "HttpLog", "Migrations", "004-NmapEvidence.sql"));
+    await sql.ExecuteAsync(evidenceMigration);
+    await sql.ExecuteAsync(evidenceMigration);
     await sql.ExecuteAsync("INSERT dbo.Job (Name) VALUES ('Benchmark')");
     foreach (var target in targets)
     {
@@ -68,16 +71,23 @@ try
     Console.WriteLine($"Isolated database: {database}; targets: {count}; ports: {options.Ports ?? "top 5000"}; -sV --version-all -O");
     await VerifyClaimsAsync(sql);
     await VerifyCancellationAsync();
-    Console.WriteLine("SQL claims, migration, stale-lease fencing, failure states, and real process cancellation passed.");
+    await VerifyProcessFailureAsync();
+    Console.WriteLine("SQL claims, migration, stale-lease fencing, failure states, and real process cancellation/error evidence passed.");
     var warmup = await scanner.ScanAsync(targets[0], cancellation.Token);
     VerifyScan(warmup);
-    Console.WriteLine("Warmup found owned HTTP service; closed-port exclusion verified.");
+    var warmupJob = await store.ClaimAsync(cancellation.Token);
+    await store.CompleteAsync(warmupJob, warmup, cancellation.Token);
+    var persisted = await sql.ExecuteScalarAsync<string>(
+        "SELECT ResponseJson FROM dbo.ReconEvidence WHERE HostJobId=@HostJobId AND StatusCode IS NULL", warmupJob);
+    if (persisted != warmup.Evidence.ResponseJson)
+        throw new InvalidOperationException("Real Nmap output did not persist losslessly.");
+    Console.WriteLine("Warmup found owned HTTP service; HTTP scripts, closed-port exclusion and full SQL evidence verified.");
 
     for (int repetition = 1; !verifyOnly && repetition <= repetitions; repetition++)
     {
         foreach (var workers in repetition % 2 == 1 ? new[] { 2, 8, 4, 16 } : new[] { 16, 4, 8, 2 })
         {
-            await sql.ExecuteAsync("DELETE dbo.Discovery; DELETE dbo.Hostname; DELETE dbo.HostJob;");
+            await sql.ExecuteAsync("DELETE dbo.ReconEvidence; DELETE dbo.Discovery; DELETE dbo.Hostname; DELETE dbo.HostJob;");
             options.Workers = workers;
             var measured = new MeasuredScanner(scanner);
             using var worker = new ReconWorker(store, measured, settings, logs.CreateLogger<ReconWorker>());
@@ -155,6 +165,15 @@ void VerifyScan(ReconScan scan)
 {
     if (!scan.Ports.Any(p => p.Number == 8080 && p.Detail.Contains("http")) || scan.Ports.Any(p => p.Number == 8081))
         throw new InvalidOperationException("Owned open/closed HTTP controls did not match Nmap results.");
+    var evidence = JsonSerializer.Deserialize<NmapOutput>(scan.Evidence.ResponseJson);
+    var document = System.Xml.Linq.XDocument.Parse(evidence.Xml);
+    var scriptIds = document.Descendants("script").Select(script => (string)script.Attribute("id")).ToArray();
+    if (evidence.ExitCode != 0 || !scriptIds.Contains("http-title") || !scriptIds.Contains("http-headers")
+        || !document.Descendants("script").Any(script => (string)script.Attribute("id") == "http-title"
+            && ((string)script.Attribute("output"))?.Contains("Owned benchmark") == true)
+        || !document.Descendants("script").Any(script => (string)script.Attribute("id") == "http-enum"
+            && ((string)script.Attribute("output"))?.Contains("/admin/") == true))
+        throw new InvalidOperationException("Real HTTP NSE results were not retained in Nmap evidence.");
 }
 
 async Task VerifyClaimsAsync(SqlConnection sql)
@@ -207,14 +226,39 @@ async Task VerifyCancellationAsync()
         await new NmapScanner(Options.Create(new ReconOptions())).ScanAsync(targets[0], stop.Token);
         throw new InvalidOperationException("Cancellation probe finished before cancellation.");
     }
-    catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
+    catch (ReconScanCanceledException exception) when (stop.IsCancellationRequested)
+    {
+        if (JsonSerializer.Deserialize<NmapOutput>(exception.Evidence.ResponseJson).Xml == null)
+            throw new InvalidOperationException("Cancelled scan did not retain its output.");
+    }
     try
     {
         await new NmapScanner(Options.Create(new ReconOptions { ProcessTimeoutSeconds = 1 }))
             .ScanAsync(targets[0], cancellation.Token);
         throw new InvalidOperationException("Process deadline did not fire.");
     }
-    catch (TimeoutException) { }
+    catch (ReconScanTimeoutException exception)
+    {
+        if (JsonSerializer.Deserialize<NmapOutput>(exception.Evidence.ResponseJson).Xml == null)
+            throw new InvalidOperationException("Timed-out scan did not retain its output.");
+    }
+}
+
+async Task VerifyProcessFailureAsync()
+{
+    const string missingScript = "mockaco-fixture-script-does-not-exist";
+    try
+    {
+        await new NmapScanner(Options.Create(new ReconOptions { Ports = "8080", Scripts = missingScript }))
+            .ScanAsync(targets[0], cancellation.Token);
+        throw new InvalidOperationException("Invalid NSE script unexpectedly succeeded.");
+    }
+    catch (ReconScanException exception)
+    {
+        var evidence = JsonSerializer.Deserialize<NmapOutput>(exception.Evidence.ResponseJson);
+        if (evidence.ExitCode == 0 || !evidence.StandardError.Contains(missingScript))
+            throw new InvalidOperationException("Nonzero process output or diagnostics were lost.");
+    }
 }
 
 async Task ServeAsync(TcpListener listener, CancellationToken token)
@@ -241,10 +285,16 @@ async Task RespondAsync(TcpClient client, CancellationToken token)
             using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
             deadline.CancelAfter(TimeSpan.FromSeconds(5));
             var stream = client.GetStream();
-            var bytes = await stream.ReadAsync(new byte[4096], deadline.Token);
+            var buffer = new byte[4096];
+            var bytes = await stream.ReadAsync(buffer, deadline.Token);
             if (bytes == 0) return;
+            var request = Encoding.ASCII.GetString(buffer, 0, bytes).Split(' ');
+            var found = request.Length > 1 && request[1] is "/" or "/admin/";
+            var body = found ? "<html><title>Owned benchmark</title></html>" : "Not found";
+            var status = found ? "200 OK" : "404 Not Found";
+            var responseBody = request[0] == "HEAD" ? "" : body;
             await stream.WriteAsync(Encoding.ASCII.GetBytes(
-                "HTTP/1.1 200 OK\r\nServer: MockacoBenchmark/1.0\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK"), deadline.Token);
+                $"HTTP/1.1 {status}\r\nServer: MockacoBenchmark/1.0\r\nContent-Type: text/html\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n{responseBody}"), deadline.Token);
         }
         catch (OperationCanceledException) { }
         catch (IOException exception) when (exception.InnerException is SocketException) { }

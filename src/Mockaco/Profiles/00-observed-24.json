@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD", "POST"], "route": "/GponForm/diag_Form"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>GPON Diagnostics</title></head><body><h1>Diagnostics</h1><pre>PING 127.0.0.1: 56 data bytes\n--- 127.0.0.1 ping statistics ---\n4 packets transmitted, 4 packets received, 0% packet loss</pre></body></html>\n"
+  }
+}

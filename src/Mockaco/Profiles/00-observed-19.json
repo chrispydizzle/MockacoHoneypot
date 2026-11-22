@@ -1,0 +1,8 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/_ignition/execute-solution"},
+  "response": {
+    "status": 405,
+    "headers": {"Content-Type": "application/json", "Server": "nginx/1.24.0", "Allow": "POST"},
+    "body": {"message": "The GET method is not supported for this route. Supported methods: POST.", "exception": "Symfony\\Component\\HttpKernel\\Exception\\MethodNotAllowedHttpException"}
+  }
+}

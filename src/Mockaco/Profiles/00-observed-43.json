@@ -1,0 +1,9 @@
+{
+  "request": {"methods": ["GET", "HEAD"], "route": "/phpmyadmin/index.php"},
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/html; charset=utf-8", "Server": "nginx/1.24.0"},
+    "bodyFormat": "text",
+    "body": "<!DOCTYPE html>\n<html lang=\"en\"><head><title>phpMyAdmin</title></head><body><h1>phpMyAdmin</h1><p>Welcome to phpMyAdmin</p><form action=\"/phpmyadmin/index.php\" method=\"post\"><input name=\"pma_username\"><input name=\"pma_password\" type=\"password\"><button>Log in</button></form><p>Version information: 5.2.1</p></body></html>\n"
+  }
+}
